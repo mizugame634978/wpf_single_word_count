@@ -104,7 +104,8 @@ public partial class ImportExportViewModel : ObservableObject
         {
             _logger.LogError(ex, "CSV import failed");
             StatusMessage = "インポートに失敗しました";
-            await _dialogService.ShowErrorAsync($"インポート中にエラーが発生しました。\n{ex.Message}");
+            await _dialogService.ShowErrorAsync(
+                $"インポート中にエラーが発生しました。\n\n{ex.GetType().Name}: {ex.Message}");
         }
         finally
         {
@@ -141,7 +142,8 @@ public partial class ImportExportViewModel : ObservableObject
         {
             _logger.LogError(ex, "CSV export failed");
             StatusMessage = "エクスポートに失敗しました";
-            await _dialogService.ShowErrorAsync($"エクスポート中にエラーが発生しました。\n{ex.Message}");
+            await _dialogService.ShowErrorAsync(
+                $"エクスポート中にエラーが発生しました。\n\n{ex.GetType().Name}: {ex.Message}");
         }
         finally
         {
@@ -178,7 +180,8 @@ public partial class ImportExportViewModel : ObservableObject
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to build prompt");
-            await _dialogService.ShowErrorAsync($"プロンプト生成に失敗しました。\n{ex.Message}");
+            await _dialogService.ShowErrorAsync(
+                $"プロンプト生成に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}\n\nスタックトレース:\n{ex.StackTrace}");
         }
     }
 

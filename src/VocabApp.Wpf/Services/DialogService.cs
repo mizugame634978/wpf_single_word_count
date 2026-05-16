@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
@@ -9,6 +11,8 @@ namespace VocabApp.Wpf.Services;
 
 public class DialogService : IDialogService
 {
+    private const string LogHint = "詳細はログを確認してください: %AppData%\\VocabApp\\logs";
+
     private readonly IServiceProvider _services;
 
     public DialogService(IServiceProvider services)
@@ -46,23 +50,13 @@ public class DialogService : IDialogService
 
     public Task ShowErrorAsync(string message, string title = "エラー")
     {
-        MessageBox.Show(
-            Application.Current?.MainWindow!,
-            message,
-            title,
-            MessageBoxButton.OK,
-            MessageBoxImage.Error);
+        ShowCopyableDialog(title, title, message, LogHint, isError: true);
         return Task.CompletedTask;
     }
 
     public Task ShowInfoAsync(string message, string title = "情報")
     {
-        MessageBox.Show(
-            Application.Current?.MainWindow!,
-            message,
-            title,
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        ShowCopyableDialog(title, title, message, hint: null, isError: false);
         return Task.CompletedTask;
     }
 
@@ -95,6 +89,28 @@ public class DialogService : IDialogService
 
     public void SetClipboardText(string text)
     {
-        Clipboard.SetDataObject(text, copy: true);
+        // クリップボードはほかのアプリ (クリップボードマネージャ等) にロック
+        // されていると ExternalException を投げる。短い間隔でリトライする。
+        for (var attempt = 1; attempt <= 5; attempt++)
+        {
+            try
+            {
+                Clipboard.SetText(text);
+                return;
+            }
+            catch (ExternalException) when (attempt < 5)
+            {
+                Thread.Sleep(50);
+            }
+        }
+    }
+
+    private static void ShowCopyableDialog(string title, string headerText, string message, string? hint, bool isError)
+    {
+        var dialog = new ErrorDialog(title, headerText, message, hint, isError)
+        {
+            Owner = Application.Current?.MainWindow,
+        };
+        dialog.ShowDialog();
     }
 }

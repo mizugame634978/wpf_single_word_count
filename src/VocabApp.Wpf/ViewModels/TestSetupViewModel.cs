@@ -1,13 +1,18 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using VocabApp.Core.Models;
+using VocabApp.Core.Services;
 
 namespace VocabApp.Wpf.ViewModels;
 
 public partial class TestSetupViewModel : ObservableObject
 {
-    public TestSetupViewModel()
+    private readonly ISettingsService _settings;
+
+    public TestSetupViewModel(ISettingsService settings)
     {
+        _settings = settings;
+
         Modes = new[]
         {
             new ModeChoice(TestMode.EnglishToJapanese, "英 → 和 (入力)"),
@@ -24,9 +29,25 @@ public partial class TestSetupViewModel : ObservableObject
         };
         Counts = new[] { 10, 20, 50, 100 };
 
-        SelectedMode = Modes[0];
-        SelectedRange = Ranges[0];
-        SelectedCount = Counts[0];
+        // 設定の既定値を使って初期化
+        var s = _settings.Current;
+        SelectedMode = Modes.FirstOrDefault(m => m.Value == s.DefaultTestMode) ?? Modes[0];
+        SelectedRange = Ranges.FirstOrDefault(r => r.Value == s.DefaultTestRange) ?? Ranges[0];
+        SelectedCount = Counts.Contains(s.DefaultTestCount) ? s.DefaultTestCount : Counts[0];
+
+        // 他画面で設定が更新されたら反映する。
+        _settings.SettingsChanged += OnSettingsChanged;
+    }
+
+    private void OnSettingsChanged(object? sender, EventArgs e)
+    {
+        var s = _settings.Current;
+        SelectedMode = Modes.FirstOrDefault(m => m.Value == s.DefaultTestMode) ?? SelectedMode;
+        SelectedRange = Ranges.FirstOrDefault(r => r.Value == s.DefaultTestRange) ?? SelectedRange;
+        if (Counts.Contains(s.DefaultTestCount))
+        {
+            SelectedCount = s.DefaultTestCount;
+        }
     }
 
     public IReadOnlyList<ModeChoice> Modes { get; }

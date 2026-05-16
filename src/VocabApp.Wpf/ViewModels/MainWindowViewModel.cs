@@ -8,15 +8,18 @@ public partial class MainWindowViewModel : ObservableObject
     private readonly WordListViewModel _wordList;
     private readonly TestHostViewModel _testHost;
     private readonly ImportExportViewModel _importExport;
+    private readonly SettingsViewModel _settings;
 
     public MainWindowViewModel(
         WordListViewModel wordList,
         TestHostViewModel testHost,
-        ImportExportViewModel importExport)
+        ImportExportViewModel importExport,
+        SettingsViewModel settings)
     {
         _wordList = wordList;
         _testHost = testHost;
         _importExport = importExport;
+        _settings = settings;
         CurrentContent = _wordList;
     }
 
@@ -29,12 +32,14 @@ public partial class MainWindowViewModel : ObservableObject
     public bool IsWordListSelected => CurrentContent == _wordList;
     public bool IsTestSelected => CurrentContent == _testHost;
     public bool IsImportExportSelected => CurrentContent == _importExport;
+    public bool IsSettingsSelected => CurrentContent == _settings;
 
     partial void OnCurrentContentChanged(object? value)
     {
         OnPropertyChanged(nameof(IsWordListSelected));
         OnPropertyChanged(nameof(IsTestSelected));
         OnPropertyChanged(nameof(IsImportExportSelected));
+        OnPropertyChanged(nameof(IsSettingsSelected));
     }
 
     [RelayCommand]
@@ -49,6 +54,9 @@ public partial class MainWindowViewModel : ObservableObject
 
     [RelayCommand]
     private void ShowImportExport() => CurrentContent = _importExport;
+
+    [RelayCommand]
+    private void ShowSettings() => CurrentContent = _settings;
 
     public async Task InitializeAsync()
     {

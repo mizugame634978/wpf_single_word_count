@@ -27,16 +27,49 @@ public partial class WordListViewModel : ObservableObject
         _logger = logger;
 
         WordsView = CollectionViewSource.GetDefaultView(Words);
-        WordsView.Filter = MatchesSearch;
+        WordsView.Filter = MatchesFilters;
         WordsView.SortDescriptions.Add(new SortDescription(nameof(Word.Text), ListSortDirection.Ascending));
+
+        MasteryFilters = new[]
+        {
+            new MasteryFilter("（すべて）", null),
+            new MasteryFilter("苦手 (0-1)", w => w.Mastery <= 1),
+            new MasteryFilter("中位 (2-3)", w => w.Mastery is >= 2 and <= 3),
+            new MasteryFilter("習得済 (4-5)", w => w.Mastery >= 4),
+            new MasteryFilter("未出題", w => w.TimesAsked == 0),
+        };
+        SelectedMasteryFilter = MasteryFilters[0];
+
+        PosFilters = new List<PosFilter> { new("（すべて）", null) };
+        foreach (var pos in Enum.GetValues<PartOfSpeech>())
+        {
+            PosFilters.Add(new PosFilter(pos.ToString(), pos));
+        }
+        SelectedPosFilter = PosFilters[0];
+
+        SelectedTag = AllTagsSentinel;
     }
 
     public ObservableCollection<Word> Words { get; } = new();
-
     public ICollectionView WordsView { get; }
+
+    public ObservableCollection<string> AvailableTags { get; } = new();
+    public IReadOnlyList<MasteryFilter> MasteryFilters { get; }
+    public List<PosFilter> PosFilters { get; }
+
+    public const string AllTagsSentinel = "（すべて）";
 
     [ObservableProperty]
     private string searchText = string.Empty;
+
+    [ObservableProperty]
+    private string? selectedTag;
+
+    [ObservableProperty]
+    private MasteryFilter selectedMasteryFilter;
+
+    [ObservableProperty]
+    private PosFilter selectedPosFilter;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(EditWordCommand))]
@@ -50,21 +83,49 @@ public partial class WordListViewModel : ObservableObject
     private string statusMessage = string.Empty;
 
     partial void OnSearchTextChanged(string value) => WordsView.Refresh();
+    partial void OnSelectedTagChanged(string? value) => WordsView.Refresh();
+    partial void OnSelectedMasteryFilterChanged(MasteryFilter value) => WordsView.Refresh();
+    partial void OnSelectedPosFilterChanged(PosFilter value) => WordsView.Refresh();
 
-    private bool MatchesSearch(object obj)
+    private bool MatchesFilters(object obj)
     {
         if (obj is not Word w)
         {
             return false;
         }
-        if (string.IsNullOrWhiteSpace(SearchText))
+
+        // テキスト検索
+        if (!string.IsNullOrWhiteSpace(SearchText))
         {
-            return true;
+            var q = SearchText.Trim();
+            var matched = w.Text.Contains(q, StringComparison.OrdinalIgnoreCase)
+                || w.Meaning.Contains(q, StringComparison.OrdinalIgnoreCase)
+                || w.Tags.Any(t => t.Name.Contains(q, StringComparison.OrdinalIgnoreCase));
+            if (!matched) return false;
         }
-        var q = SearchText.Trim();
-        return w.Text.Contains(q, StringComparison.OrdinalIgnoreCase)
-            || w.Meaning.Contains(q, StringComparison.OrdinalIgnoreCase)
-            || w.Tags.Any(t => t.Name.Contains(q, StringComparison.OrdinalIgnoreCase));
+
+        // タグ
+        if (SelectedTag is not null && SelectedTag != AllTagsSentinel)
+        {
+            if (!w.Tags.Any(t => string.Equals(t.Name, SelectedTag, StringComparison.OrdinalIgnoreCase)))
+            {
+                return false;
+            }
+        }
+
+        // 習熟度
+        if (SelectedMasteryFilter.Predicate is { } pred && !pred(w))
+        {
+            return false;
+        }
+
+        // 品詞
+        if (SelectedPosFilter.Value is { } pos && w.PartOfSpeech != pos)
+        {
+            return false;
+        }
+
+        return true;
     }
 
     [RelayCommand]
@@ -79,6 +140,8 @@ public partial class WordListViewModel : ObservableObject
             {
                 Words.Add(w);
             }
+
+            RefreshAvailableTags();
             StatusMessage = $"{Words.Count} 件";
         }
         catch (Exception ex)
@@ -93,18 +156,31 @@ public partial class WordListViewModel : ObservableObject
         }
     }
 
+    private void RefreshAvailableTags()
+    {
+        var current = SelectedTag;
+        AvailableTags.Clear();
+        AvailableTags.Add(AllTagsSentinel);
+        foreach (var name in Words
+                     .SelectMany(w => w.Tags.Select(t => t.Name))
+                     .Distinct(StringComparer.OrdinalIgnoreCase)
+                     .OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
+        {
+            AvailableTags.Add(name);
+        }
+        SelectedTag = current is not null && AvailableTags.Contains(current)
+            ? current
+            : AllTagsSentinel;
+    }
+
     [RelayCommand]
     private async Task AddWordAsync()
     {
         var input = await _dialogService.ShowWordEditorAsync(null);
-        if (input is null)
-        {
-            return;
-        }
+        if (input is null) return;
         try
         {
             var saved = await _vocabService.AddAsync(input);
-            // 一覧を最新化 (タグの ID 等が確定するため再取得)
             await LoadAsync();
             SelectedWord = Words.FirstOrDefault(w => w.Id == saved.Id);
         }
@@ -119,15 +195,9 @@ public partial class WordListViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanEditOrDelete))]
     private async Task EditWordAsync()
     {
-        if (SelectedWord is null)
-        {
-            return;
-        }
+        if (SelectedWord is null) return;
         var input = await _dialogService.ShowWordEditorAsync(SelectedWord);
-        if (input is null)
-        {
-            return;
-        }
+        if (input is null) return;
         try
         {
             await _vocabService.UpdateAsync(input);
@@ -145,21 +215,16 @@ public partial class WordListViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanEditOrDelete))]
     private async Task DeleteWordAsync()
     {
-        if (SelectedWord is null)
-        {
-            return;
-        }
+        if (SelectedWord is null) return;
         var target = SelectedWord;
         var ok = await _dialogService.ConfirmAsync(
             $"「{target.Text}」を削除しますか?", "削除の確認");
-        if (!ok)
-        {
-            return;
-        }
+        if (!ok) return;
         try
         {
             await _vocabService.DeleteAsync(target.Id);
             Words.Remove(target);
+            RefreshAvailableTags();
             StatusMessage = $"{Words.Count} 件";
         }
         catch (Exception ex)
@@ -173,7 +238,19 @@ public partial class WordListViewModel : ObservableObject
     [RelayCommand]
     private Task RefreshAsync() => LoadAsync();
 
+    [RelayCommand]
+    private void ResetFilters()
+    {
+        SearchText = string.Empty;
+        SelectedTag = AllTagsSentinel;
+        SelectedMasteryFilter = MasteryFilters[0];
+        SelectedPosFilter = PosFilters[0];
+    }
+
     private bool CanEditOrDelete() => SelectedWord is not null;
 
     public static string FormatTags(Word w) => TagParser.Format(w.Tags.Select(t => t.Name));
+
+    public record MasteryFilter(string Display, Func<Word, bool>? Predicate);
+    public record PosFilter(string Display, PartOfSpeech? Value);
 }

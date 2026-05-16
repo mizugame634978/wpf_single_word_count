@@ -7,35 +7,79 @@
              xmlns:conv="clr-namespace:VocabApp.Wpf.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:WordListViewModel}"
-             d:DesignHeight="500" d:DesignWidth="700"
+             d:DesignHeight="500" d:DesignWidth="800"
              FontFamily="Yu Gothic UI">
     <UserControl.Resources>
         <conv:TagsToStringConverter x:Key="TagsToString" />
     </UserControl.Resources>
+    <UserControl.InputBindings>
+        <KeyBinding Modifiers="Control" Key="N" Command="{Binding AddWordCommand}" />
+        <KeyBinding Key="F5" Command="{Binding RefreshCommand}" />
+    </UserControl.InputBindings>
     <Grid Margin="16">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
+        <!-- 行 0: 操作ボタン -->
         <DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,8">
             <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                <Button Content="追加" Width="72" Margin="4,0,0,0"
+                <Button Content="追加 (Ctrl+N)" Width="120" Margin="4,0,0,0"
                         Command="{Binding AddWordCommand}" />
                 <Button Content="編集" Width="72" Margin="4,0,0,0"
                         Command="{Binding EditWordCommand}" />
-                <Button Content="削除" Width="72" Margin="4,0,0,0"
+                <Button Content="削除 (Del)" Width="100" Margin="4,0,0,0"
                         Command="{Binding DeleteWordCommand}" />
-                <Button Content="再読み込み" Width="100" Margin="4,0,0,0"
+                <Button Content="更新 (F5)" Width="100" Margin="4,0,0,0"
                         Command="{Binding RefreshCommand}" />
             </StackPanel>
-            <TextBox Margin="0,0,8,0" VerticalContentAlignment="Center"
+            <TextBox x:Name="SearchBox"
+                     Margin="0,0,8,0" VerticalContentAlignment="Center"
                      Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
-                     ToolTip="単語 / 和訳 / タグで検索" />
+                     ToolTip="単語 / 和訳 / タグで検索 (Ctrl+F でフォーカス)" />
         </DockPanel>
 
-        <DataGrid Grid.Row="1"
+        <!-- 行 1: フィルタ -->
+        <Grid Grid.Row="1" Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="タグ:" VerticalAlignment="Center" Margin="0,0,4,0" />
+            <ComboBox Grid.Column="1"
+                      ItemsSource="{Binding AvailableTags}"
+                      SelectedItem="{Binding SelectedTag}"
+                      Margin="0,0,12,0" />
+
+            <TextBlock Grid.Column="2" Text="習熟度:" VerticalAlignment="Center" Margin="0,0,4,0" />
+            <ComboBox Grid.Column="3"
+                      ItemsSource="{Binding MasteryFilters}"
+                      SelectedItem="{Binding SelectedMasteryFilter}"
+                      DisplayMemberPath="Display"
+                      Margin="0,0,12,0" />
+
+            <TextBlock Grid.Column="4" Text="品詞:" VerticalAlignment="Center" Margin="0,0,4,0" />
+            <ComboBox Grid.Column="5"
+                      ItemsSource="{Binding PosFilters}"
+                      SelectedItem="{Binding SelectedPosFilter}"
+                      DisplayMemberPath="Display"
+                      Margin="0,0,12,0" />
+
+            <Button Grid.Column="6" Content="絞り込みをクリア"
+                    Command="{Binding ResetFiltersCommand}" Padding="8,2" />
+        </Grid>
+
+        <!-- 行 2: DataGrid -->
+        <DataGrid Grid.Row="2"
                   ItemsSource="{Binding WordsView}"
                   SelectedItem="{Binding SelectedWord}"
                   AutoGenerateColumns="False"
@@ -49,6 +93,8 @@
             <DataGrid.InputBindings>
                 <MouseBinding MouseAction="LeftDoubleClick"
                               Command="{Binding EditWordCommand}" />
+                <KeyBinding Key="Delete" Command="{Binding DeleteWordCommand}" />
+                <KeyBinding Key="Return" Command="{Binding EditWordCommand}" />
             </DataGrid.InputBindings>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="単語" Binding="{Binding Text}" Width="160" />
@@ -66,7 +112,8 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <DockPanel Grid.Row="2" Margin="0,8,0,0">
+        <!-- 行 3: ステータス -->
+        <DockPanel Grid.Row="3" Margin="0,8,0,0">
             <TextBlock DockPanel.Dock="Right"
                        Text="{Binding StatusMessage}" Foreground="Gray" />
             <TextBlock Text="読み込み中..."

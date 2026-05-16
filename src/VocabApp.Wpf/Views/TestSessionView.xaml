@@ -39,21 +39,31 @@
                            TextAlignment="Center" TextWrapping="Wrap"
                            HorizontalAlignment="Center" />
 
-                <!-- フラッシュカード: 表示中の答え -->
-                <TextBlock Text="{Binding AnswerRevealedText}"
-                           FontSize="20" Margin="0,16,0,0"
-                           Foreground="DarkSlateGray"
-                           TextAlignment="Center" TextWrapping="Wrap"
-                           HorizontalAlignment="Center"
-                           Visibility="{Binding IsAnswerRevealed, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}" />
+                <!-- 自己採点モードで露出した正解 -->
+                <StackPanel Margin="0,16,0,0"
+                            HorizontalAlignment="Center"
+                            Visibility="{Binding IsAnswerRevealed, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                    <TextBlock Text="正解" Foreground="Gray" FontSize="12" HorizontalAlignment="Center" />
+                    <TextBlock Text="{Binding AnswerRevealedText}"
+                               FontSize="22" Foreground="DarkSlateGray"
+                               TextAlignment="Center" TextWrapping="Wrap"
+                               HorizontalAlignment="Center" />
+                    <TextBlock Margin="0,8,0,0"
+                               HorizontalAlignment="Center"
+                               Foreground="Gray" FontSize="12"
+                               Visibility="{Binding UserInput, Converter={x:Static conv:NonEmptyStringToVisibilityConverter.Instance}}">
+                        <Run Text="あなたの回答: " />
+                        <Run Text="{Binding UserInput, Mode=OneWay}" />
+                    </TextBlock>
+                </StackPanel>
             </StackPanel>
         </Border>
 
-        <!-- モード別操作領域 -->
+        <!-- 操作領域 -->
         <ContentControl Grid.Row="2" Margin="0,16,0,0">
             <Grid>
-                <!-- タイピングモード -->
-                <StackPanel Visibility="{Binding IsTypingMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                <!-- 入力欄 (タイピングモードかつ未公開時) -->
+                <StackPanel Visibility="{Binding IsTypingInputVisible, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
                     <TextBox Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}"
                              FontSize="18" Padding="6"
                              VerticalContentAlignment="Center">
@@ -69,7 +79,7 @@
                     </StackPanel>
                 </StackPanel>
 
-                <!-- 4 択モード -->
+                <!-- 4 択 -->
                 <ItemsControl ItemsSource="{Binding Choices}"
                               Visibility="{Binding IsMultipleChoiceMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
                     <ItemsControl.ItemsPanel>
@@ -88,24 +98,27 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
 
-                <!-- フラッシュカードモード -->
-                <StackPanel Visibility="{Binding IsFlashcardMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
-                    <Button Content="答えを見る" Padding="20,8" FontSize="14"
-                            HorizontalAlignment="Center"
-                            Command="{Binding RevealAnswerCommand}"
-                            Visibility="{Binding IsAnswerRevealed, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}" />
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
-                                Visibility="{Binding IsAnswerRevealed, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
-                        <Button Content="覚えていなかった" Padding="16,8" Margin="4" FontSize="14"
-                                Command="{Binding MarkForgottenCommand}" />
-                        <Button Content="覚えていた" Padding="16,8" Margin="4" FontSize="14"
-                                Command="{Binding MarkRememberedCommand}" />
-                    </StackPanel>
+                <!-- フラッシュカード「答えを見る」 -->
+                <Button Content="答えを見る" Padding="20,8" FontSize="14"
+                        HorizontalAlignment="Center"
+                        Command="{Binding RevealAnswerCommand}"
+                        Visibility="{Binding IsRevealAnswerButtonVisible, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}" />
+
+                <!-- 自己採点 (E→J タイピング・フラッシュカード共通) -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                            Visibility="{Binding IsSelfGradeButtonsVisible, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                    <Button Content="× 不正解" Padding="20,10" Margin="4" FontSize="14"
+                            Width="160"
+                            Command="{Binding SelfGradeWrongCommand}" />
+                    <Button Content="○ 正解" Padding="20,10" Margin="4" FontSize="14"
+                            Width="160"
+                            Command="{Binding SelfGradeCorrectCommand}"
+                            IsDefault="True" />
                 </StackPanel>
             </Grid>
         </ContentControl>
 
-        <!-- ステータスメッセージ (前問の正誤) -->
+        <!-- 前問のステータス -->
         <TextBlock Grid.Row="3" Text="{Binding StatusMessage}"
                    Foreground="DarkSlateGray" Margin="0,12,0,0" />
     </Grid>

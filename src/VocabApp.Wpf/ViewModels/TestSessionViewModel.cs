@@ -48,18 +48,33 @@ public partial class TestSessionViewModel : ObservableObject
 
     public ObservableCollection<string> Choices { get; } = new();
 
+    // モード判定
+    public bool IsMultipleChoiceMode => Mode == TestMode.MultipleChoiceEnglishToJapanese;
+    public bool IsFlashcardMode => Mode == TestMode.Flashcard;
     public bool IsTypingMode =>
         Mode == TestMode.EnglishToJapanese || Mode == TestMode.JapaneseToEnglish;
 
-    public bool IsMultipleChoiceMode => Mode == TestMode.MultipleChoiceEnglishToJapanese;
+    /// <summary>E→J タイピングと フラッシュカードは自己採点 (入力後/めくり後にユーザが正誤を判断)。</summary>
+    public bool IsSelfGradeMode =>
+        Mode == TestMode.EnglishToJapanese || Mode == TestMode.Flashcard;
 
-    public bool IsFlashcardMode => Mode == TestMode.Flashcard;
+    // UI 表示条件
+    public bool IsTypingInputVisible => IsTypingMode && !IsAnswerRevealed;
+    public bool IsRevealAnswerButtonVisible => IsFlashcardMode && !IsAnswerRevealed;
+    public bool IsSelfGradeButtonsVisible => IsAnswerRevealed && IsSelfGradeMode;
 
-    partial void OnModeChanged(TestMode value)
+    partial void OnModeChanged(TestMode value) => RaiseModeFlags();
+    partial void OnIsAnswerRevealedChanged(bool value) => RaiseModeFlags();
+
+    private void RaiseModeFlags()
     {
         OnPropertyChanged(nameof(IsTypingMode));
         OnPropertyChanged(nameof(IsMultipleChoiceMode));
         OnPropertyChanged(nameof(IsFlashcardMode));
+        OnPropertyChanged(nameof(IsSelfGradeMode));
+        OnPropertyChanged(nameof(IsTypingInputVisible));
+        OnPropertyChanged(nameof(IsRevealAnswerButtonVisible));
+        OnPropertyChanged(nameof(IsSelfGradeButtonsVisible));
     }
 
     public async Task StartAsync(TestSessionOptions options)
@@ -96,9 +111,6 @@ public partial class TestSessionViewModel : ObservableObject
 
         PromptText = Mode switch
         {
-            TestMode.EnglishToJapanese => q.Word.Text,
-            TestMode.MultipleChoiceEnglishToJapanese => q.Word.Text,
-            TestMode.Flashcard => q.Word.Text,
             TestMode.JapaneseToEnglish => q.Word.Meaning,
             _ => q.Word.Text,
         };
@@ -112,13 +124,32 @@ public partial class TestSessionViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// 入力モードの回答送信。
+    /// - J→E: 自動判定して即進む
+    /// - E→J: 正解表示のみ行い、自己採点 (SelfGradeCorrect/SelfGradeWrong) を待つ
+    /// </summary>
     [RelayCommand]
     private async Task SubmitAsync()
     {
-        if (!IsTypingMode) return;
+        if (!IsTypingMode || IsAnswerRevealed)
+        {
+            return;
+        }
+
         var q = _questions[_currentIndex];
-        var correct = AnswerJudge.Judge(Mode, q.Word, UserInput);
-        await RecordAndAdvance(q.Word, UserInput, correct);
+
+        if (Mode == TestMode.JapaneseToEnglish)
+        {
+            var correct = AnswerJudge.Judge(Mode, q.Word, UserInput);
+            await RecordAndAdvance(q.Word, UserInput, correct);
+        }
+        else if (Mode == TestMode.EnglishToJapanese)
+        {
+            // 自己採点モードへ。正解を見せる。
+            AnswerRevealedText = q.Word.Meaning;
+            IsAnswerRevealed = true;
+        }
     }
 
     [RelayCommand]
@@ -130,6 +161,7 @@ public partial class TestSessionViewModel : ObservableObject
         await RecordAndAdvance(q.Word, choice, correct);
     }
 
+    /// <summary>フラッシュカードで「答えを見る」を押した時に正解を露出する。</summary>
     [RelayCommand]
     private void RevealAnswer()
     {
@@ -139,17 +171,22 @@ public partial class TestSessionViewModel : ObservableObject
         IsAnswerRevealed = true;
     }
 
+    /// <summary>自己採点: 正解だったと申告。</summary>
     [RelayCommand]
-    private Task MarkRememberedAsync() => FlashcardMarkAsync(true);
+    private Task SelfGradeCorrectAsync() => SelfGradeAsync(true);
 
+    /// <summary>自己採点: 間違えたと申告。</summary>
     [RelayCommand]
-    private Task MarkForgottenAsync() => FlashcardMarkAsync(false);
+    private Task SelfGradeWrongAsync() => SelfGradeAsync(false);
 
-    private async Task FlashcardMarkAsync(bool remembered)
+    private async Task SelfGradeAsync(bool isCorrect)
     {
-        if (!IsFlashcardMode) return;
+        if (!IsAnswerRevealed) return;
         var q = _questions[_currentIndex];
-        await RecordAndAdvance(q.Word, remembered ? "覚えていた" : "覚えていなかった", remembered);
+        var userInputForRecord = Mode == TestMode.Flashcard
+            ? (isCorrect ? "(覚えていた)" : "(覚えていなかった)")
+            : UserInput;
+        await RecordAndAdvance(q.Word, userInputForRecord, isCorrect);
     }
 
     [RelayCommand]

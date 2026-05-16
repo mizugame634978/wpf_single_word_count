@@ -33,7 +33,8 @@ public class VocabDbContext : DbContext
 
         modelBuilder.Entity<Tag>(entity =>
         {
-            entity.Property(t => t.Name).IsRequired().HasMaxLength(64);
+            entity.Property(t => t.Name).IsRequired().HasMaxLength(64)
+                .UseCollation("NOCASE"); // 大小区別なしで重複排除する
             entity.HasIndex(t => t.Name).IsUnique();
         });
 

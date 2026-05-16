@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddSingleton<IVocabularyService, VocabularyService>();
         services.AddSingleton<ICsvService, CsvService>();
         services.AddSingleton<IPromptTemplateService, PromptTemplateService>();
+        services.AddSingleton<ITestSessionService, TestSessionService>();
 
         return services;
     }

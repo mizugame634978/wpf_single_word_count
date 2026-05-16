@@ -1,7 +1,9 @@
 # wpf_single_word_count
 
 Windows 11 向け WPF (.NET 8) 製の英単語学習デスクトップアプリ。
-詳細な設計は [`docs/design.md`](docs/design.md) を参照。
+
+- 全体設計: [`docs/design.md`](docs/design.md)
+- コーディングルール (反省と回避策): [`docs/coding-rules.md`](docs/coding-rules.md)
 
 ## 必要環境
 

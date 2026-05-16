@@ -68,7 +68,12 @@ public class VocabularyService : IVocabularyService
         existing.UpdatedAt = DateTime.UtcNow;
         // TimesAsked / TimesCorrect / LastAskedAt / Mastery は学習中の更新であり
         // 編集ダイアログ経由では触らない。
-        existing.Tags = await ResolveTagsAsync(db, word.Tags.Select(t => t.Name), cancellationToken);
+        var resolved = await ResolveTagsAsync(db, word.Tags.Select(t => t.Name), cancellationToken);
+        existing.Tags.Clear();
+        foreach (var tag in resolved)
+        {
+            existing.Tags.Add(tag);
+        }
 
         await db.SaveChangesAsync(cancellationToken);
     }

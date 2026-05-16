@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using VocabApp.Core.Services;
+using VocabApp.Infrastructure.Csv;
 using VocabApp.Infrastructure.Persistence;
 
 namespace VocabApp.Infrastructure;
@@ -15,6 +16,8 @@ public static class DependencyInjection
             options.UseSqlite(sqliteConnectionString));
 
         services.AddSingleton<IVocabularyService, VocabularyService>();
+        services.AddSingleton<ICsvService, CsvService>();
+        services.AddSingleton<IPromptTemplateService, PromptTemplateService>();
 
         return services;
     }

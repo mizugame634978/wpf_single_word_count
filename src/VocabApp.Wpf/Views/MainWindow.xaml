@@ -11,21 +11,62 @@
         WindowStartupLocation="CenterScreen"
         FontFamily="Yu Gothic UI"
         Loaded="OnLoaded">
+    <Window.Resources>
+        <Style x:Key="NavButton" TargetType="Button">
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="8,6" />
+            <Setter Property="Margin" Value="0,2" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#E5E5E5" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="NavButtonActive" TargetType="Button" BasedOn="{StaticResource NavButton}">
+            <Setter Property="Background" Value="#DDE7F4" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+    </Window.Resources>
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="200" />
+            <ColumnDefinition Width="220" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
         <Border Grid.Column="0" Background="#F3F3F3" Padding="12">
             <StackPanel>
                 <TextBlock Text="VocabApp" FontSize="20" FontWeight="Bold" Margin="0,0,0,16" />
-                <Button Content="単語一覧" HorizontalContentAlignment="Left" Margin="0,4"
-                        BorderThickness="0" Background="Transparent"
-                        Command="{Binding ShowWordListCommand}" />
-                <TextBlock Text="テスト" Margin="4,8" Foreground="Gray" />
-                <TextBlock Text="インポート / エクスポート" Margin="4,8" Foreground="Gray" />
-                <TextBlock Text="設定" Margin="4,8" Foreground="Gray" />
+                <Button Content="単語一覧"
+                        Command="{Binding ShowWordListCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsWordListSelected}" Value="True">
+                                    <Setter Property="Background" Value="#DDE7F4" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <TextBlock Text="テスト" Margin="8,8,0,8" Foreground="Gray" />
+                <Button Content="インポート / エクスポート"
+                        Command="{Binding ShowImportExportCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsImportExportSelected}" Value="True">
+                                    <Setter Property="Background" Value="#DDE7F4" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <TextBlock Text="設定" Margin="8,8,0,8" Foreground="Gray" />
             </StackPanel>
         </Border>
 

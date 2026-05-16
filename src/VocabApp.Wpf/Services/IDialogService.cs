@@ -14,4 +14,14 @@ public interface IDialogService
     Task<bool> ConfirmAsync(string message, string title);
 
     Task ShowErrorAsync(string message, string title = "エラー");
+
+    Task ShowInfoAsync(string message, string title = "情報");
+
+    /// <summary>開くファイルダイアログ。キャンセルなら null。</summary>
+    Task<string?> ShowOpenFileAsync(string title, string filter);
+
+    /// <summary>保存ファイルダイアログ。キャンセルなら null。</summary>
+    Task<string?> ShowSaveFileAsync(string title, string filter, string? defaultFileName = null);
+
+    void SetClipboardText(string text);
 }

@@ -48,6 +48,7 @@ public partial class App : Application
 
                 services.AddTransient<WordEditorViewModel>();
                 services.AddSingleton<WordListViewModel>();
+                services.AddSingleton<ImportExportViewModel>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })

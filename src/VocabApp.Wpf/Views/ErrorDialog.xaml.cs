@@ -24,6 +24,14 @@ public partial class ErrorDialog : Window
         {
             HintTextBlock.Text = hint;
         }
+
+        // 開いた瞬間に本文を全選択 + フォーカスして、ユーザが Ctrl+C のみで
+        // 取得できるようにする。
+        Loaded += (_, _) =>
+        {
+            MessageTextBox.Focus();
+            MessageTextBox.SelectAll();
+        };
     }
 
     private void OnCopyClick(object sender, RoutedEventArgs e)

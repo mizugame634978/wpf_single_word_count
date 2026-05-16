@@ -28,10 +28,4 @@ public interface IDialogService
 
     /// <summary>保存ファイルダイアログ。キャンセルなら null。</summary>
     Task<string?> ShowSaveFileAsync(string title, string filter, string? defaultFileName = null);
-
-    /// <summary>
-    /// クリップボードへのコピーを試みる。他プロセスがロックしている場合は
-    /// 数回リトライし、最終的に失敗した場合は false を返す (例外は投げない)。
-    /// </summary>
-    bool TrySetClipboardText(string text);
 }

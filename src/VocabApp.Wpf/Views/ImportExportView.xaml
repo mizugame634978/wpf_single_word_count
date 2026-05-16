@@ -48,8 +48,9 @@
             <TextBlock Text="LLM 用プロンプト出力" FontSize="18" FontWeight="Bold" Margin="0,0,0,8" />
             <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,12">
                 Gemini CLI や ChatGPT に渡して、指定の CSV 形式で単語を生成させる
-                ためのプロンプトを組み立ててクリップボードにコピーします。
-                生成結果をファイルに保存し、上の「インポート」から取り込んでください。
+                ためのプロンプトを表示します。表示されたダイアログで本文が選択された
+                状態になるので、Ctrl+C でコピーして LLM に貼り付け、生成結果を
+                ファイルに保存して上の「インポート」から取り込んでください。
             </TextBlock>
 
             <Grid Margin="0,0,0,8">
@@ -79,8 +80,8 @@
                          ToolTip="任意。例: 中級 / CEFR B2 / TOEIC 700" />
             </Grid>
 
-            <Button Content="プロンプトをクリップボードにコピー" HorizontalAlignment="Left"
-                    Padding="12,6" Command="{Binding CopyPromptCommand}" />
+            <Button Content="プロンプトを表示" HorizontalAlignment="Left"
+                    Padding="12,6" Command="{Binding ShowPromptCommand}" />
 
             <TextBlock Text="{Binding StatusMessage}" Foreground="DarkSlateGray" Margin="0,16,0,0" />
         </StackPanel>

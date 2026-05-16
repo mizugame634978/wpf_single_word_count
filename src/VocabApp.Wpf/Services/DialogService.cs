@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
@@ -91,30 +89,6 @@ public class DialogService : IDialogService
         };
         var ok = dialog.ShowDialog(Application.Current?.MainWindow) == true;
         return Task.FromResult<string?>(ok ? dialog.FileName : null);
-    }
-
-    public bool TrySetClipboardText(string text)
-    {
-        // クリップボードはほかのアプリ (クリップボードマネージャ、RDP セッション、
-        // セキュリティソフトなど) にロックされていると ExternalException を投げる。
-        // 短い間隔で複数回リトライし、それでも駄目なら false を返す。
-        for (var attempt = 1; attempt <= 10; attempt++)
-        {
-            try
-            {
-                Clipboard.SetDataObject(text, copy: true);
-                return true;
-            }
-            catch (ExternalException) when (attempt < 10)
-            {
-                Thread.Sleep(100);
-            }
-            catch (ExternalException)
-            {
-                return false;
-            }
-        }
-        return false;
     }
 
     private static void ShowCopyableDialog(string title, string headerText, string message, string? hint, bool isError)

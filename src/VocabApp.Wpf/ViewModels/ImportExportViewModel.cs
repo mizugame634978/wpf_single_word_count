@@ -152,7 +152,7 @@ public partial class ImportExportViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task CopyPromptAsync()
+    private async Task ShowPromptAsync()
     {
         if (string.IsNullOrWhiteSpace(PromptTheme))
         {
@@ -181,19 +181,11 @@ public partial class ImportExportViewModel : ObservableObject
             return;
         }
 
-        // クリップボードへのコピーは Best-Effort。失敗してもプロンプト本文は
-        // プレビュー画面で見せて、手動コピー (Ctrl+A → Ctrl+C) で取得できる
-        // ようにする。
-        var copied = _dialogService.TrySetClipboardText(prompt);
-        StatusMessage = copied
-            ? "プロンプトをクリップボードにコピーしました"
-            : "クリップボードへのコピーに失敗 (本文を手動でコピーしてください)";
-
-        var hint = copied
-            ? "クリップボードにコピー済みです。Gemini CLI / ChatGPT などに貼り付け、得られた CSV を上の「インポート」から取り込んでください。"
-            : "クリップボードがほかのアプリに使用されているため、自動コピーに失敗しました。下の本文をクリックして Ctrl+A → Ctrl+C で手動コピーするか、「本文をコピー」ボタンを押してください。";
-
-        await _dialogService.ShowTextDialogAsync("LLM 用プロンプト", prompt, hint);
+        StatusMessage = "プロンプトを表示しました";
+        await _dialogService.ShowTextDialogAsync(
+            "LLM 用プロンプト",
+            prompt,
+            "本文は選択済みです。Ctrl+C でコピー後、Gemini CLI / ChatGPT などに貼り付け、得られた CSV を上の「インポート」から取り込んでください。");
     }
 
     public record ConflictModeChoice(ConflictMode Value, string Display);

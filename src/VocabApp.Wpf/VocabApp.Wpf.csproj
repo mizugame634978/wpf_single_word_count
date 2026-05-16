@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
-    <TargetFramework>net8.0-windows</TargetFramework>
-    <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
+    <TargetFramework>net8.0-windows10.0.22000.0</TargetFramework>
     <UseWPF>true</UseWPF>
     <RootNamespace>VocabApp.Wpf</RootNamespace>
     <AssemblyName>VocabApp</AssemblyName>

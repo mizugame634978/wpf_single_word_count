@@ -275,7 +275,7 @@ public class TestAnswer
 
 | 区分 | 採用 | 備考 |
 |------|------|------|
-| ランタイム | .NET 8 (LTS) | Windows 11 専用 (`net8.0-windows`, TargetPlatformMinVersion=10.0.22000) |
+| ランタイム | .NET 8 (LTS) | Windows 11 専用 (`net8.0-windows10.0.22000.0`) |
 | UI | WPF | 既存スキルセットと配布の容易さ |
 | MVVM | CommunityToolkit.Mvvm | source generator で boilerplate 削減 |
 | DI | Microsoft.Extensions.DependencyInjection | |

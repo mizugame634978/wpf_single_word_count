@@ -1,0 +1,112 @@
+<UserControl x:Class="VocabApp.Wpf.Views.TestSessionView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:VocabApp.Wpf.ViewModels"
+             xmlns:conv="clr-namespace:VocabApp.Wpf.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:TestSessionViewModel}"
+             d:DesignHeight="500" d:DesignWidth="700"
+             FontFamily="Yu Gothic UI">
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ヘッダ: 進捗 + 終了 -->
+        <DockPanel Grid.Row="0" Margin="0,0,0,16">
+            <Button DockPanel.Dock="Right"
+                    Content="テスト終了"
+                    Command="{Binding ExitCommand}"
+                    Padding="12,4" />
+            <TextBlock VerticalAlignment="Center">
+                <Run Text="問題 " />
+                <Run Text="{Binding CurrentQuestionNumber, Mode=OneWay}" FontWeight="Bold" />
+                <Run Text=" / " />
+                <Run Text="{Binding TotalQuestions, Mode=OneWay}" />
+            </TextBlock>
+        </DockPanel>
+
+        <!-- 問題本文 -->
+        <Border Grid.Row="1" Background="#F8F8F8" Padding="24" CornerRadius="4">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                <TextBlock Text="{Binding PromptText}"
+                           FontSize="32" FontWeight="SemiBold"
+                           TextAlignment="Center" TextWrapping="Wrap"
+                           HorizontalAlignment="Center" />
+
+                <!-- フラッシュカード: 表示中の答え -->
+                <TextBlock Text="{Binding AnswerRevealedText}"
+                           FontSize="20" Margin="0,16,0,0"
+                           Foreground="DarkSlateGray"
+                           TextAlignment="Center" TextWrapping="Wrap"
+                           HorizontalAlignment="Center"
+                           Visibility="{Binding IsAnswerRevealed, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}" />
+            </StackPanel>
+        </Border>
+
+        <!-- モード別操作領域 -->
+        <ContentControl Grid.Row="2" Margin="0,16,0,0">
+            <Grid>
+                <!-- タイピングモード -->
+                <StackPanel Visibility="{Binding IsTypingMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                    <TextBox Text="{Binding UserInput, UpdateSourceTrigger=PropertyChanged}"
+                             FontSize="18" Padding="6"
+                             VerticalContentAlignment="Center">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Enter" Command="{Binding SubmitCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                        <Button Content="スキップ" Width="100" Margin="0,0,8,0"
+                                Command="{Binding SkipCommand}" />
+                        <Button Content="回答 (Enter)" Width="140"
+                                Command="{Binding SubmitCommand}" IsDefault="True" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- 4 択モード -->
+                <ItemsControl ItemsSource="{Binding Choices}"
+                              Visibility="{Binding IsMultipleChoiceMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <UniformGrid Columns="2" Rows="2" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding}"
+                                    Margin="4" Padding="12" FontSize="14"
+                                    HorizontalContentAlignment="Center"
+                                    Command="{Binding DataContext.SelectChoiceCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
+                                    CommandParameter="{Binding}" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- フラッシュカードモード -->
+                <StackPanel Visibility="{Binding IsFlashcardMode, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                    <Button Content="答えを見る" Padding="20,8" FontSize="14"
+                            HorizontalAlignment="Center"
+                            Command="{Binding RevealAnswerCommand}"
+                            Visibility="{Binding IsAnswerRevealed, Converter={x:Static conv:InverseBoolToVisibilityConverter.Instance}}" />
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"
+                                Visibility="{Binding IsAnswerRevealed, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                        <Button Content="覚えていなかった" Padding="16,8" Margin="4" FontSize="14"
+                                Command="{Binding MarkForgottenCommand}" />
+                        <Button Content="覚えていた" Padding="16,8" Margin="4" FontSize="14"
+                                Command="{Binding MarkRememberedCommand}" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+        </ContentControl>
+
+        <!-- ステータスメッセージ (前問の正誤) -->
+        <TextBlock Grid.Row="3" Text="{Binding StatusMessage}"
+                   Foreground="DarkSlateGray" Margin="0,12,0,0" />
+    </Grid>
+</UserControl>

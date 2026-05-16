@@ -52,7 +52,19 @@
                         </Style>
                     </Button.Style>
                 </Button>
-                <TextBlock Text="テスト" Margin="8,8,0,8" Foreground="Gray" />
+                <Button Content="テスト"
+                        Command="{Binding ShowTestCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsTestSelected}" Value="True">
+                                    <Setter Property="Background" Value="#DDE7F4" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
                 <Button Content="インポート / エクスポート"
                         Command="{Binding ShowImportExportCommand}">
                     <Button.Style>

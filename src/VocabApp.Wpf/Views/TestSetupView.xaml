@@ -1,0 +1,54 @@
+<UserControl x:Class="VocabApp.Wpf.Views.TestSetupView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:VocabApp.Wpf.ViewModels"
+             xmlns:conv="clr-namespace:VocabApp.Wpf.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:TestSetupViewModel}"
+             d:DesignHeight="500" d:DesignWidth="700"
+             FontFamily="Yu Gothic UI">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" MaxWidth="560" HorizontalAlignment="Left">
+            <TextBlock Text="テスト設定" FontSize="22" FontWeight="Bold" Margin="0,0,0,16" />
+
+            <TextBlock Text="出題モード" Margin="0,0,0,4" />
+            <ComboBox ItemsSource="{Binding Modes}"
+                      SelectedItem="{Binding SelectedMode}"
+                      DisplayMemberPath="Display"
+                      Margin="0,0,0,16" />
+
+            <TextBlock Text="出題範囲" Margin="0,0,0,4" />
+            <ComboBox ItemsSource="{Binding Ranges}"
+                      SelectedItem="{Binding SelectedRange}"
+                      DisplayMemberPath="Display"
+                      Margin="0,0,0,8" />
+
+            <TextBox Text="{Binding TagFilter, UpdateSourceTrigger=PropertyChanged}"
+                     Margin="0,0,0,16"
+                     ToolTip="絞り込みに使うタグ名 (1 つだけ)"
+                     Visibility="{Binding IsTagFilterVisible, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}" />
+
+            <TextBlock Text="出題数" Margin="0,0,0,4" />
+            <ComboBox ItemsSource="{Binding Counts}"
+                      SelectedItem="{Binding SelectedCount}"
+                      Width="120" HorizontalAlignment="Left"
+                      Margin="0,0,0,24" />
+
+            <Button Content="テストを開始"
+                    HorizontalAlignment="Left"
+                    Padding="20,8"
+                    FontSize="14"
+                    Command="{Binding StartCommand}" />
+
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,24,0,0">
+                ヒント:
+                ・「英 → 和 (入力)」: 単語を見て和訳をタイプ。複数訳のうち 1 つに一致すれば正解 (大小無視)。
+                ・「和 → 英 (入力)」: 和訳を見て英単語をタイプ。
+                ・「英 → 和 (4 択)」: ダミー選択肢から正解を選ぶ。
+                ・「フラッシュカード」: 英単語 → 和訳をめくって自己申告。
+            </TextBlock>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -12,6 +12,18 @@
             <DataTemplate DataType="{x:Type vm:ImportExportViewModel}">
                 <views:ImportExportView />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:TestHostViewModel}">
+                <views:TestHostView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:TestSetupViewModel}">
+                <views:TestSetupView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:TestSessionViewModel}">
+                <views:TestSessionView />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type vm:TestResultViewModel}">
+                <views:TestResultView />
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -165,24 +165,35 @@ public partial class ImportExportViewModel : ObservableObject
             return;
         }
 
+        string prompt;
         try
         {
-            var prompt = _promptService.BuildVocabularyPrompt(new VocabularyPromptRequest(
+            prompt = _promptService.BuildVocabularyPrompt(new VocabularyPromptRequest(
                 Theme: PromptTheme,
                 Count: PromptCount,
                 Level: string.IsNullOrWhiteSpace(PromptLevel) ? null : PromptLevel));
-            _dialogService.SetClipboardText(prompt);
-            StatusMessage = "プロンプトをクリップボードにコピーしました";
-            await _dialogService.ShowInfoAsync(
-                "プロンプトをクリップボードにコピーしました。\n\nGemini CLI や ChatGPT などに貼り付けて生成し、得られた CSV をこの画面から「インポート」で取り込んでください。",
-                "コピー完了");
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to build prompt");
             await _dialogService.ShowErrorAsync(
-                $"プロンプト生成に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}\n\nスタックトレース:\n{ex.StackTrace}");
+                $"プロンプト生成に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}");
+            return;
         }
+
+        // クリップボードへのコピーは Best-Effort。失敗してもプロンプト本文は
+        // プレビュー画面で見せて、手動コピー (Ctrl+A → Ctrl+C) で取得できる
+        // ようにする。
+        var copied = _dialogService.TrySetClipboardText(prompt);
+        StatusMessage = copied
+            ? "プロンプトをクリップボードにコピーしました"
+            : "クリップボードへのコピーに失敗 (本文を手動でコピーしてください)";
+
+        var hint = copied
+            ? "クリップボードにコピー済みです。Gemini CLI / ChatGPT などに貼り付け、得られた CSV を上の「インポート」から取り込んでください。"
+            : "クリップボードがほかのアプリに使用されているため、自動コピーに失敗しました。下の本文をクリックして Ctrl+A → Ctrl+C で手動コピーするか、「本文をコピー」ボタンを押してください。";
+
+        await _dialogService.ShowTextDialogAsync("LLM 用プロンプト", prompt, hint);
     }
 
     public record ConflictModeChoice(ConflictMode Value, string Display);

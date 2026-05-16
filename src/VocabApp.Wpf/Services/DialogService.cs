@@ -60,6 +60,12 @@ public class DialogService : IDialogService
         return Task.CompletedTask;
     }
 
+    public Task ShowTextDialogAsync(string title, string body, string? hint = null)
+    {
+        ShowCopyableDialog(title, title, body, hint, isError: false);
+        return Task.CompletedTask;
+    }
+
     public Task<string?> ShowOpenFileAsync(string title, string filter)
     {
         var dialog = new OpenFileDialog
@@ -87,22 +93,28 @@ public class DialogService : IDialogService
         return Task.FromResult<string?>(ok ? dialog.FileName : null);
     }
 
-    public void SetClipboardText(string text)
+    public bool TrySetClipboardText(string text)
     {
-        // クリップボードはほかのアプリ (クリップボードマネージャ等) にロック
-        // されていると ExternalException を投げる。短い間隔でリトライする。
-        for (var attempt = 1; attempt <= 5; attempt++)
+        // クリップボードはほかのアプリ (クリップボードマネージャ、RDP セッション、
+        // セキュリティソフトなど) にロックされていると ExternalException を投げる。
+        // 短い間隔で複数回リトライし、それでも駄目なら false を返す。
+        for (var attempt = 1; attempt <= 10; attempt++)
         {
             try
             {
-                Clipboard.SetText(text);
-                return;
+                Clipboard.SetDataObject(text, copy: true);
+                return true;
             }
-            catch (ExternalException) when (attempt < 5)
+            catch (ExternalException) when (attempt < 10)
             {
-                Thread.Sleep(50);
+                Thread.Sleep(100);
+            }
+            catch (ExternalException)
+            {
+                return false;
             }
         }
+        return false;
     }
 
     private static void ShowCopyableDialog(string title, string headerText, string message, string? hint, bool isError)

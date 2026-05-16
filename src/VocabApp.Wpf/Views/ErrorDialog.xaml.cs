@@ -28,23 +28,28 @@ public partial class ErrorDialog : Window
 
     private void OnCopyClick(object sender, RoutedEventArgs e)
     {
-        for (var attempt = 1; attempt <= 5; attempt++)
+        for (var attempt = 1; attempt <= 10; attempt++)
         {
             try
             {
-                Clipboard.SetText(MessageTextBox.Text);
+                Clipboard.SetDataObject(MessageTextBox.Text, copy: true);
                 CopyButton.Content = "コピーしました";
                 return;
             }
-            catch (ExternalException) when (attempt < 5)
+            catch (ExternalException) when (attempt < 10)
             {
-                Thread.Sleep(50);
+                Thread.Sleep(100);
             }
             catch
             {
-                CopyButton.Content = "コピー失敗";
+                CopyButton.Content = "コピー失敗 (手動で Ctrl+A → Ctrl+C)";
+                MessageTextBox.SelectAll();
+                MessageTextBox.Focus();
                 return;
             }
         }
+        CopyButton.Content = "コピー失敗 (手動で Ctrl+A → Ctrl+C)";
+        MessageTextBox.SelectAll();
+        MessageTextBox.Focus();
     }
 }

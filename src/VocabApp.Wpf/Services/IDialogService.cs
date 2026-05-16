@@ -17,11 +17,21 @@ public interface IDialogService
 
     Task ShowInfoAsync(string message, string title = "情報");
 
+    /// <summary>
+    /// 任意のテキストをコピー可能な形で表示する。長い本文を見せて
+    /// 手動コピーしてもらいたい場合 (LLM 用プロンプト等) に使う。
+    /// </summary>
+    Task ShowTextDialogAsync(string title, string body, string? hint = null);
+
     /// <summary>開くファイルダイアログ。キャンセルなら null。</summary>
     Task<string?> ShowOpenFileAsync(string title, string filter);
 
     /// <summary>保存ファイルダイアログ。キャンセルなら null。</summary>
     Task<string?> ShowSaveFileAsync(string title, string filter, string? defaultFileName = null);
 
-    void SetClipboardText(string text);
+    /// <summary>
+    /// クリップボードへのコピーを試みる。他プロセスがロックしている場合は
+    /// 数回リトライし、最終的に失敗した場合は false を返す (例外は投げない)。
+    /// </summary>
+    bool TrySetClipboardText(string text);
 }

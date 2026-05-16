@@ -5,11 +5,12 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:VocabApp.Wpf.ViewModels"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel, IsDesignTimeCreatable=True}"
+        d:DataContext="{d:DesignInstance Type=vm:MainWindowViewModel, IsDesignTimeCreatable=False}"
         Title="{Binding Title}"
-        Height="600" Width="900"
+        Height="640" Width="980"
         WindowStartupLocation="CenterScreen"
-        FontFamily="Yu Gothic UI">
+        FontFamily="Yu Gothic UI"
+        Loaded="OnLoaded">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="200" />
@@ -19,20 +20,15 @@
         <Border Grid.Column="0" Background="#F3F3F3" Padding="12">
             <StackPanel>
                 <TextBlock Text="VocabApp" FontSize="20" FontWeight="Bold" Margin="0,0,0,16" />
-                <TextBlock Text="単語一覧" Margin="0,4" />
-                <TextBlock Text="テスト" Margin="0,4" Foreground="Gray" />
-                <TextBlock Text="インポート / エクスポート" Margin="0,4" Foreground="Gray" />
-                <TextBlock Text="設定" Margin="0,4" Foreground="Gray" />
+                <Button Content="単語一覧" HorizontalContentAlignment="Left" Margin="0,4"
+                        BorderThickness="0" Background="Transparent"
+                        Command="{Binding ShowWordListCommand}" />
+                <TextBlock Text="テスト" Margin="4,8" Foreground="Gray" />
+                <TextBlock Text="インポート / エクスポート" Margin="4,8" Foreground="Gray" />
+                <TextBlock Text="設定" Margin="4,8" Foreground="Gray" />
             </StackPanel>
         </Border>
 
-        <Grid Grid.Column="1" Margin="24">
-            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                <TextBlock Text="ようこそ" FontSize="28" HorizontalAlignment="Center" />
-                <TextBlock Text="{Binding StatusMessage}"
-                           Margin="0,12,0,0" Foreground="Gray"
-                           HorizontalAlignment="Center" />
-            </StackPanel>
-        </Grid>
+        <ContentControl Grid.Column="1" Content="{Binding CurrentContent}" />
     </Grid>
 </Window>

@@ -11,10 +11,10 @@ public static class DependencyInjection
         this IServiceCollection services,
         string sqliteConnectionString)
     {
-        services.AddDbContext<VocabDbContext>(options =>
+        services.AddDbContextFactory<VocabDbContext>(options =>
             options.UseSqlite(sqliteConnectionString));
 
-        services.AddScoped<IVocabularyService, VocabularyService>();
+        services.AddSingleton<IVocabularyService, VocabularyService>();
 
         return services;
     }

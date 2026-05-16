@@ -1,0 +1,77 @@
+<UserControl x:Class="VocabApp.Wpf.Views.WordListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:VocabApp.Wpf.ViewModels"
+             xmlns:conv="clr-namespace:VocabApp.Wpf.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:WordListViewModel}"
+             d:DesignHeight="500" d:DesignWidth="700"
+             FontFamily="Yu Gothic UI">
+    <UserControl.Resources>
+        <conv:TagsToStringConverter x:Key="TagsToString" />
+    </UserControl.Resources>
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,8">
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button Content="追加" Width="72" Margin="4,0,0,0"
+                        Command="{Binding AddWordCommand}" />
+                <Button Content="編集" Width="72" Margin="4,0,0,0"
+                        Command="{Binding EditWordCommand}" />
+                <Button Content="削除" Width="72" Margin="4,0,0,0"
+                        Command="{Binding DeleteWordCommand}" />
+                <Button Content="再読み込み" Width="100" Margin="4,0,0,0"
+                        Command="{Binding RefreshCommand}" />
+            </StackPanel>
+            <TextBox Margin="0,0,8,0" VerticalContentAlignment="Center"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     ToolTip="単語 / 和訳 / タグで検索" />
+        </DockPanel>
+
+        <DataGrid Grid.Row="1"
+                  ItemsSource="{Binding WordsView}"
+                  SelectedItem="{Binding SelectedWord}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="True"
+                  SelectionMode="Single"
+                  GridLinesVisibility="Horizontal"
+                  HeadersVisibility="Column"
+                  RowHeaderWidth="0">
+            <DataGrid.InputBindings>
+                <MouseBinding MouseAction="LeftDoubleClick"
+                              Command="{Binding EditWordCommand}" />
+            </DataGrid.InputBindings>
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="単語" Binding="{Binding Text}" Width="160" />
+                <DataGridTextColumn Header="和訳" Binding="{Binding Meaning}" Width="220" />
+                <DataGridTextColumn Header="品詞" Binding="{Binding PartOfSpeech}" Width="80" />
+                <DataGridTextColumn Header="タグ"
+                                    Binding="{Binding Tags, Converter={StaticResource TagsToString}}"
+                                    Width="140" />
+                <DataGridTextColumn Header="習熟" Binding="{Binding Mastery}" Width="60" />
+                <DataGridTextColumn Header="出題" Binding="{Binding TimesAsked}" Width="60" />
+                <DataGridTextColumn Header="正答" Binding="{Binding TimesCorrect}" Width="60" />
+                <DataGridTextColumn Header="最終出題"
+                                    Binding="{Binding LastAskedAt, StringFormat=yyyy-MM-dd}"
+                                    Width="90" />
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <DockPanel Grid.Row="2" Margin="0,8,0,0">
+            <TextBlock DockPanel.Dock="Right"
+                       Text="{Binding StatusMessage}" Foreground="Gray" />
+            <TextBlock Text="読み込み中..."
+                       Foreground="Gray"
+                       Visibility="{Binding IsLoading, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}" />
+        </DockPanel>
+    </Grid>
+</UserControl>

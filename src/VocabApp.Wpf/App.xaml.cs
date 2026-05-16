@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using VocabApp.Infrastructure;
 using VocabApp.Infrastructure.Persistence;
+using VocabApp.Wpf.Services;
 using VocabApp.Wpf.ViewModels;
 using VocabApp.Wpf.Views;
 
@@ -43,6 +44,10 @@ public partial class App : Application
             {
                 services.AddVocabInfrastructure($"Data Source={dbPath}");
 
+                services.AddSingleton<IDialogService, DialogService>();
+
+                services.AddTransient<WordEditorViewModel>();
+                services.AddSingleton<WordListViewModel>();
                 services.AddSingleton<MainWindowViewModel>();
                 services.AddSingleton<MainWindow>();
             })
@@ -72,13 +77,13 @@ public partial class App : Application
         {
             return;
         }
-        using var scope = _host.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<VocabDbContext>();
-        // Phase 0: schema is created directly from the model. Switch to
+        var factory = _host.Services.GetRequiredService<IDbContextFactory<VocabDbContext>>();
+        await using var db = await factory.CreateDbContextAsync();
+        // Phase 0/1: schema is created directly from the model. Switch to
         // Database.MigrateAsync() once migrations are introduced (see README).
         await db.Database.EnsureCreatedAsync();
 
-        var logger = scope.ServiceProvider.GetRequiredService<ILogger<App>>();
+        var logger = _host.Services.GetRequiredService<ILogger<App>>();
         logger.LogInformation("Database initialised at {Path}",
             db.Database.GetDbConnection().DataSource);
     }

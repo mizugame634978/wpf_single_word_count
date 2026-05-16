@@ -1,0 +1,56 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{1F4E5A5B-0001-0000-0000-000000000001}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{1F4E5A5B-0002-0000-0000-000000000002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VocabApp.Core", "src\VocabApp.Core\VocabApp.Core.csproj", "{A1A1A1A1-0001-0000-0000-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VocabApp.Infrastructure", "src\VocabApp.Infrastructure\VocabApp.Infrastructure.csproj", "{A1A1A1A1-0002-0000-0000-000000000002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VocabApp.Wpf", "src\VocabApp.Wpf\VocabApp.Wpf.csproj", "{A1A1A1A1-0003-0000-0000-000000000003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VocabApp.Core.Tests", "tests\VocabApp.Core.Tests\VocabApp.Core.Tests.csproj", "{A1A1A1A1-0004-0000-0000-000000000004}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VocabApp.Infrastructure.Tests", "tests\VocabApp.Infrastructure.Tests\VocabApp.Infrastructure.Tests.csproj", "{A1A1A1A1-0005-0000-0000-000000000005}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A1A1A1A1-0001-0000-0000-000000000001}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-0001-0000-0000-000000000001}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-0001-0000-0000-000000000001}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-0001-0000-0000-000000000001}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-0002-0000-0000-000000000002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-0002-0000-0000-000000000002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-0002-0000-0000-000000000002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-0002-0000-0000-000000000002}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-0003-0000-0000-000000000003}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-0003-0000-0000-000000000003}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-0003-0000-0000-000000000003}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-0003-0000-0000-000000000003}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-0004-0000-0000-000000000004}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-0004-0000-0000-000000000004}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-0004-0000-0000-000000000004}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-0004-0000-0000-000000000004}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A1A1A1A1-0005-0000-0000-000000000005}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A1A1A1A1-0005-0000-0000-000000000005}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A1A1A1A1-0005-0000-0000-000000000005}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A1A1A1A1-0005-0000-0000-000000000005}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A1A1A1A1-0001-0000-0000-000000000001} = {1F4E5A5B-0001-0000-0000-000000000001}
+		{A1A1A1A1-0002-0000-0000-000000000002} = {1F4E5A5B-0001-0000-0000-000000000001}
+		{A1A1A1A1-0003-0000-0000-000000000003} = {1F4E5A5B-0001-0000-0000-000000000001}
+		{A1A1A1A1-0004-0000-0000-000000000004} = {1F4E5A5B-0002-0000-0000-000000000002}
+		{A1A1A1A1-0005-0000-0000-000000000005} = {1F4E5A5B-0002-0000-0000-000000000002}
+	EndGlobalSection
+EndGlobal

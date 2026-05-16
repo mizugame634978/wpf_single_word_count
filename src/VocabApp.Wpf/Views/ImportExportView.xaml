@@ -1,0 +1,89 @@
+<UserControl x:Class="VocabApp.Wpf.Views.ImportExportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:VocabApp.Wpf.ViewModels"
+             xmlns:conv="clr-namespace:VocabApp.Wpf.Converters"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:ImportExportViewModel}"
+             d:DesignHeight="600" d:DesignWidth="800"
+             FontFamily="Yu Gothic UI">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="24" MaxWidth="640" HorizontalAlignment="Left">
+
+            <!-- Import -->
+            <TextBlock Text="インポート" FontSize="18" FontWeight="Bold" Margin="0,0,0,8" />
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,12">
+                CSV (UTF-8) を読み込んで単語帳に追加します。必須列は word, meaning。
+                列の順番は問いません。学習統計列が無い CSV でも取り込めます。
+            </TextBlock>
+
+            <TextBlock Text="衝突 (word + part_of_speech が既存と一致) の扱い" Margin="0,0,0,4" />
+            <ComboBox ItemsSource="{Binding ConflictModes}"
+                      SelectedItem="{Binding SelectedConflictMode}"
+                      DisplayMemberPath="Display"
+                      Margin="0,0,0,12" />
+
+            <Button Content="CSV ファイルを選択してインポート" HorizontalAlignment="Left"
+                    Padding="12,6" Command="{Binding ImportCommand}" IsEnabled="{Binding IsBusy, Converter={x:Static conv:InverseBoolConverter.Instance}}" />
+
+            <Separator Margin="0,24" />
+
+            <!-- Export -->
+            <TextBlock Text="エクスポート" FontSize="18" FontWeight="Bold" Margin="0,0,0,8" />
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,12">
+                単語帳全件を CSV (UTF-8) に書き出します。学習統計列の有無を選べます。
+            </TextBlock>
+
+            <CheckBox Content="学習統計列 (times_asked / times_correct / last_asked_at / mastery) を含める"
+                      IsChecked="{Binding IncludeLearningStats}" Margin="0,0,0,12" />
+
+            <Button Content="保存先を指定してエクスポート" HorizontalAlignment="Left"
+                    Padding="12,6" Command="{Binding ExportCommand}" IsEnabled="{Binding IsBusy, Converter={x:Static conv:InverseBoolConverter.Instance}}" />
+
+            <Separator Margin="0,24" />
+
+            <!-- LLM prompt -->
+            <TextBlock Text="LLM 用プロンプト出力" FontSize="18" FontWeight="Bold" Margin="0,0,0,8" />
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,12">
+                Gemini CLI や ChatGPT に渡して、指定の CSV 形式で単語を生成させる
+                ためのプロンプトを表示します。表示されたダイアログで本文が選択された
+                状態になるので、Ctrl+C でコピーして LLM に貼り付け、生成結果を
+                ファイルに保存して上の「インポート」から取り込んでください。
+            </TextBlock>
+
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="テーマ" VerticalAlignment="Center" Margin="0,4" />
+                <TextBox Grid.Row="0" Grid.Column="1" Margin="0,4"
+                         Text="{Binding PromptTheme, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="例: ビジネス英語の動詞 / TOEIC 700 レベルの名詞" />
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="件数" VerticalAlignment="Center" Margin="0,4" />
+                <TextBox Grid.Row="1" Grid.Column="1" Margin="0,4"
+                         Text="{Binding PromptCount, UpdateSourceTrigger=PropertyChanged}"
+                         Width="80" HorizontalAlignment="Left" />
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="レベル" VerticalAlignment="Center" Margin="0,4" />
+                <TextBox Grid.Row="2" Grid.Column="1" Margin="0,4"
+                         Text="{Binding PromptLevel, UpdateSourceTrigger=PropertyChanged}"
+                         ToolTip="任意。例: 中級 / CEFR B2 / TOEIC 700" />
+            </Grid>
+
+            <Button Content="プロンプトを表示" HorizontalAlignment="Left"
+                    Padding="12,6" Command="{Binding ShowPromptCommand}" />
+
+            <TextBlock Text="{Binding StatusMessage}" Foreground="DarkSlateGray" Margin="0,16,0,0" />
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

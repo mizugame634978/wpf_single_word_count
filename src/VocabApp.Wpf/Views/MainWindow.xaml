@@ -78,7 +78,19 @@
                         </Style>
                     </Button.Style>
                 </Button>
-                <TextBlock Text="設定" Margin="8,8,0,8" Foreground="Gray" />
+                <Button Content="設定"
+                        Command="{Binding ShowSettingsCommand}">
+                    <Button.Style>
+                        <Style TargetType="Button" BasedOn="{StaticResource NavButton}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsSettingsSelected}" Value="True">
+                                    <Setter Property="Background" Value="#DDE7F4" />
+                                    <Setter Property="FontWeight" Value="SemiBold" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
             </StackPanel>
         </Border>
 

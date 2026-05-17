@@ -55,10 +55,11 @@ public class VocabDbContext : DbContext
         modelBuilder.Entity<TestAnswer>(entity =>
         {
             entity.Property(a => a.UserInput).HasMaxLength(512);
+            // Word を削除したら、対応する回答履歴も一緒に消す。
             entity.HasOne(a => a.Word)
                 .WithMany()
                 .HasForeignKey(a => a.WordId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

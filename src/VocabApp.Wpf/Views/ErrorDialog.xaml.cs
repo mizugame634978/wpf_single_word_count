@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 
@@ -16,48 +14,21 @@ public partial class ErrorDialog : Window
             ? new SolidColorBrush(Color.FromRgb(0xB0, 0x00, 0x20))
             : new SolidColorBrush(Color.FromRgb(0x20, 0x40, 0x80));
         MessageTextBox.Text = message;
-        if (string.IsNullOrWhiteSpace(hint))
-        {
-            HintTextBlock.Visibility = Visibility.Collapsed;
-        }
-        else
-        {
-            HintTextBlock.Text = hint;
-        }
+
+        // ヒント末尾に Ctrl+C 案内を常に付けて、ユーザを手動コピーへ誘導する。
+        var copyHint = "本文は選択済みです。Ctrl+C でコピーできます。";
+        HintTextBlock.Text = string.IsNullOrWhiteSpace(hint)
+            ? copyHint
+            : $"{hint}\n\n{copyHint}";
 
         // 開いた瞬間に本文を全選択 + フォーカスして、ユーザが Ctrl+C のみで
-        // 取得できるようにする。
+        // 取得できるようにする。アプリ側からのクリップボード書き込みは
+        // 環境によっては失敗するため、ボタン経由のコピーは提供しない
+        // (docs/coding-rules.md 参照)。
         Loaded += (_, _) =>
         {
             MessageTextBox.Focus();
             MessageTextBox.SelectAll();
         };
-    }
-
-    private void OnCopyClick(object sender, RoutedEventArgs e)
-    {
-        for (var attempt = 1; attempt <= 10; attempt++)
-        {
-            try
-            {
-                Clipboard.SetDataObject(MessageTextBox.Text, copy: true);
-                CopyButton.Content = "コピーしました";
-                return;
-            }
-            catch (ExternalException) when (attempt < 10)
-            {
-                Thread.Sleep(100);
-            }
-            catch
-            {
-                CopyButton.Content = "コピー失敗 (手動で Ctrl+A → Ctrl+C)";
-                MessageTextBox.SelectAll();
-                MessageTextBox.Focus();
-                return;
-            }
-        }
-        CopyButton.Content = "コピー失敗 (手動で Ctrl+A → Ctrl+C)";
-        MessageTextBox.SelectAll();
-        MessageTextBox.Focus();
     }
 }

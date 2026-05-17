@@ -15,13 +15,14 @@
   - 開いた瞬間に `SelectAll()` + `Focus()` を呼び、ユーザが Ctrl+C だけで取得できる状態にする。
 - **例外**: 純粋な Yes/No 確認 (削除確認等) は標準の `MessageBox` で十分。
 
-### クリップボードへの自動書き込みを主経路にしない
+### クリップボードへの自動書き込みは UI に出さない
 
 - **反省 (Phase 2)**: 「プロンプトをクリップボードにコピー」を機能の主導線にしたが、ユーザ環境で `CLIPBRD_E_CANT_OPEN (HRESULT 0x800401D0)` が頻発した。RDP / クリップボードマネージャ / セキュリティソフトが常時ロックしているケースは 10 回 × 100ms のリトライでも解放されない。
+- **反省 (Phase 4)**: フォールバックとして残した「本文をコピー」ボタンも、同じ環境では基本失敗するため、押すと「コピー失敗」表示になり「壊れている UI」に見えた。
 - **ルール**:
   - 「ユーザに文字列を渡す」UI の正規ルートは **コピー可能な TextBox に表示** することにする (上記ダイアログ流用)。
-  - クリップボード API (`Clipboard.SetText` / `SetDataObject`) は補助的なボタンとしてのみ提供し、失敗を握りつぶしても機能全体が止まらない設計にする。
-  - クリップボード書き込みが失敗した場合は、本文を `SelectAll()` + `Focus()` してユーザを Ctrl+C へ誘導する (黙って失敗させない)。
+  - クリップボード API (`Clipboard.SetText` / `SetDataObject`) を **押せるボタンとして UI に出さない**。アプリから書き込みに行く UI 自体を提供しない。
+  - 代わりに、TextBox を開いた瞬間に `SelectAll()` + `Focus()` し、ヒント文で「Ctrl+C でコピーできます」と明示してユーザを手動コピーへ誘導する。
 
 ### 自動判定が本質的に難しい問題は UX (自己採点) で逃がす
 
@@ -36,6 +37,31 @@
   - 「日本語の正規化」「形態素解析」「埋め込み類似度」など重い実装に
     取り掛かる前に、本当に自動化が必要か (= 自己採点で十分か) を問う。
   - 必要なら LLM 判定 (Phase 5 連携) を後付けの上位モードとして用意する。
+
+### 例外表示は InnerException までチェーン全部を見せる
+
+- **反省 (Phase 4)**: 単語削除時に `DbUpdateException: An error occurred
+  while saving the entity changes. See the inner exception for details.`
+  が出たが、UI には外側の `ex.Message` しか出していなかったため、ユーザに
+  原因 (実際は FK 制約違反) が伝わらなかった。
+- **ルール**:
+  - VM のエラーメッセージは `VocabApp.Core.Utilities.ExceptionFormatter.Format(ex)`
+    で組み立て、`InnerException` を末端までインデント表示する。
+  - グローバル例外ハンドラは `FormatWithStack(ex)` で最深部のスタック
+    トレースも添える。
+  - 単独で `{ex.Message}` だけを出さない。
+
+### EF Core の OnDelete はリレーション設計時に明示する
+
+- **反省 (Phase 4)**: `TestAnswer.Word` の FK を `DeleteBehavior.Restrict`
+  で構成していたため、一度テストに出した単語が削除できなくなっていた。
+- **ルール**:
+  - 「親が消えたら子はどうなるか」を必ず意思決定し、`OnDelete(...)` を
+    省略しない (省略時の既定は非自明)。
+  - Cascade / SetNull / Restrict のどれを選んだか、`VocabDbContext` の
+    該当ブロックに 1 行コメントを残す。
+  - 既存 DB のスキーマ変更が `EnsureCreated` で反映されない期間は、
+    サービス側で「先に子レコードを消す」フォールバックを併用する。
 
 ## データ層
 

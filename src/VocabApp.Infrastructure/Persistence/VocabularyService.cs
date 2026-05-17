@@ -86,6 +86,13 @@ public class VocabularyService : IVocabularyService
         {
             return;
         }
+
+        // 既存 DB は TestAnswer の FK が DeleteBehavior.Restrict で作られて
+        // いる可能性があるため、Word に紐づく回答履歴を先に削除しておく。
+        // (新規 DB では Cascade で消えるが、二重削除しても問題ない)
+        var answers = db.TestAnswers.Where(a => a.WordId == id);
+        db.TestAnswers.RemoveRange(answers);
+
         db.Words.Remove(entity);
         await db.SaveChangesAsync(cancellationToken);
     }

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using VocabApp.Core.Csv;
 using VocabApp.Core.Services;
+using VocabApp.Core.Utilities;
 using VocabApp.Wpf.Services;
 
 namespace VocabApp.Wpf.ViewModels;
@@ -105,7 +106,7 @@ public partial class ImportExportViewModel : ObservableObject
             _logger.LogError(ex, "CSV import failed");
             StatusMessage = "インポートに失敗しました";
             await _dialogService.ShowErrorAsync(
-                $"インポート中にエラーが発生しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"インポート中にエラーが発生しました。\n\n{ExceptionFormatter.Format(ex)}");
         }
         finally
         {
@@ -143,7 +144,7 @@ public partial class ImportExportViewModel : ObservableObject
             _logger.LogError(ex, "CSV export failed");
             StatusMessage = "エクスポートに失敗しました";
             await _dialogService.ShowErrorAsync(
-                $"エクスポート中にエラーが発生しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"エクスポート中にエラーが発生しました。\n\n{ExceptionFormatter.Format(ex)}");
         }
         finally
         {
@@ -177,7 +178,7 @@ public partial class ImportExportViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to build prompt");
             await _dialogService.ShowErrorAsync(
-                $"プロンプト生成に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"プロンプト生成に失敗しました。\n\n{ExceptionFormatter.Format(ex)}");
             return;
         }
 

@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Serilog;
 using VocabApp.Core.Services;
+using VocabApp.Core.Utilities;
 using VocabApp.Infrastructure;
 using VocabApp.Infrastructure.Persistence;
 using VocabApp.Wpf.Services;
@@ -149,7 +150,7 @@ public partial class App : Application
                     return;
                 }
                 _ = dialog.ShowErrorAsync(
-                    $"{ex.GetType().Name}: {ex.Message}\n\nスタックトレース:\n{ex.StackTrace}",
+                    ExceptionFormatter.FormatWithStack(ex),
                     "予期しないエラー");
             });
         }

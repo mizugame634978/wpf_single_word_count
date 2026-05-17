@@ -148,7 +148,7 @@ public partial class WordListViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to load words");
             await _dialogService.ShowErrorAsync(
-                $"単語一覧の読み込みに失敗しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"単語一覧の読み込みに失敗しました。\n\n{ExceptionFormatter.Format(ex)}");
         }
         finally
         {
@@ -188,7 +188,7 @@ public partial class WordListViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to add word");
             await _dialogService.ShowErrorAsync(
-                $"単語の追加に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"単語の追加に失敗しました。\n\n{ExceptionFormatter.Format(ex)}");
         }
     }
 
@@ -208,7 +208,7 @@ public partial class WordListViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to update word");
             await _dialogService.ShowErrorAsync(
-                $"単語の更新に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"単語の更新に失敗しました。\n\n{ExceptionFormatter.Format(ex)}");
         }
     }
 
@@ -231,7 +231,7 @@ public partial class WordListViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to delete word");
             await _dialogService.ShowErrorAsync(
-                $"単語の削除に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"単語の削除に失敗しました。\n\n{ExceptionFormatter.Format(ex)}");
         }
     }
 

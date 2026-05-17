@@ -95,7 +95,7 @@ public partial class TestSessionViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to start test session");
             await _dialogService.ShowErrorAsync(
-                $"テストの開始に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"テストの開始に失敗しました。\n\n{ExceptionFormatter.Format(ex)}");
             Cancelled?.Invoke();
         }
     }
@@ -236,7 +236,7 @@ public partial class TestSessionViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to record answer");
             await _dialogService.ShowErrorAsync(
-                $"回答の記録に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"回答の記録に失敗しました。\n\n{ExceptionFormatter.Format(ex)}");
             return;
         }
 

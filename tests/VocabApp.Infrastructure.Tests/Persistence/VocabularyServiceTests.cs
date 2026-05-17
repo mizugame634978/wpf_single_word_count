@@ -158,6 +158,36 @@ public class VocabularyServiceTests : IDisposable
     }
 
     [Fact]
+    public async Task DeleteAsync_RemovesWord_EvenWhenTestAnswersReferenceIt()
+    {
+        var service = new VocabularyService(_factory);
+        var saved = await service.AddAsync(new Word { Text = "abandon", Meaning = "放棄する" });
+
+        // 単語にテスト回答履歴をぶら下げる (FK Restrict なら削除が拒否される条件)
+        await using (var db = _factory.CreateDbContext())
+        {
+            var session = new TestSession { Mode = TestMode.EnglishToJapanese, StartedAt = DateTime.UtcNow };
+            db.TestSessions.Add(session);
+            await db.SaveChangesAsync();
+            db.TestAnswers.Add(new TestAnswer
+            {
+                TestSessionId = session.Id,
+                WordId = saved.Id,
+                UserInput = "anything",
+                IsCorrect = true,
+                AnsweredAt = DateTime.UtcNow,
+            });
+            await db.SaveChangesAsync();
+        }
+
+        await service.DeleteAsync(saved.Id);
+
+        await using var verify = _factory.CreateDbContext();
+        (await verify.Words.CountAsync()).Should().Be(0);
+        (await verify.TestAnswers.CountAsync()).Should().Be(0);
+    }
+
+    [Fact]
     public async Task GetAllAsync_IncludesTags_AndOrdersByText()
     {
         var service = new VocabularyService(_factory);

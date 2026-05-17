@@ -5,6 +5,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using VocabApp.Core.Models;
 using VocabApp.Core.Services;
+using VocabApp.Core.Utilities;
 using VocabApp.Wpf.Services;
 
 namespace VocabApp.Wpf.ViewModels;
@@ -81,7 +82,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to save settings");
             await _dialogService.ShowErrorAsync(
-                $"設定の保存に失敗しました。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"設定の保存に失敗しました。\n\n{ExceptionFormatter.Format(ex)}");
         }
     }
 
@@ -100,7 +101,7 @@ public partial class SettingsViewModel : ObservableObject
         catch (Exception ex)
         {
             await _dialogService.ShowErrorAsync(
-                $"ログフォルダを開けませんでした。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"ログフォルダを開けませんでした。\n\n{ExceptionFormatter.Format(ex)}");
         }
     }
 
@@ -127,7 +128,7 @@ public partial class SettingsViewModel : ObservableObject
         {
             _logger.LogError(ex, "Failed to reset DB");
             await _dialogService.ShowErrorAsync(
-                $"DB の削除に失敗しました。アプリが DB ファイルを掴んでいるため、終了後に手動で削除してください。\n\n{ex.GetType().Name}: {ex.Message}");
+                $"DB の削除に失敗しました。アプリが DB ファイルを掴んでいるため、終了後に手動で削除してください。\n\n{ExceptionFormatter.Format(ex)}");
         }
     }
 

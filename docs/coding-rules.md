@@ -37,6 +37,31 @@
     取り掛かる前に、本当に自動化が必要か (= 自己採点で十分か) を問う。
   - 必要なら LLM 判定 (Phase 5 連携) を後付けの上位モードとして用意する。
 
+### 例外表示は InnerException までチェーン全部を見せる
+
+- **反省 (Phase 4)**: 単語削除時に `DbUpdateException: An error occurred
+  while saving the entity changes. See the inner exception for details.`
+  が出たが、UI には外側の `ex.Message` しか出していなかったため、ユーザに
+  原因 (実際は FK 制約違反) が伝わらなかった。
+- **ルール**:
+  - VM のエラーメッセージは `VocabApp.Core.Utilities.ExceptionFormatter.Format(ex)`
+    で組み立て、`InnerException` を末端までインデント表示する。
+  - グローバル例外ハンドラは `FormatWithStack(ex)` で最深部のスタック
+    トレースも添える。
+  - 単独で `{ex.Message}` だけを出さない。
+
+### EF Core の OnDelete はリレーション設計時に明示する
+
+- **反省 (Phase 4)**: `TestAnswer.Word` の FK を `DeleteBehavior.Restrict`
+  で構成していたため、一度テストに出した単語が削除できなくなっていた。
+- **ルール**:
+  - 「親が消えたら子はどうなるか」を必ず意思決定し、`OnDelete(...)` を
+    省略しない (省略時の既定は非自明)。
+  - Cascade / SetNull / Restrict のどれを選んだか、`VocabDbContext` の
+    該当ブロックに 1 行コメントを残す。
+  - 既存 DB のスキーマ変更が `EnsureCreated` で反映されない期間は、
+    サービス側で「先に子レコードを消す」フォールバックを併用する。
+
 ## データ層
 
 ### SQLite 文字列比較は明示的に NOCASE を指定する

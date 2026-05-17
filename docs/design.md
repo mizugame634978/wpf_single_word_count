@@ -184,28 +184,26 @@ dictionary,辞書; 辞典,noun,Please pass me the English-Japanese dictionary.,t
 
 ### 4.1 全体構成
 
+```mermaid
+flowchart TD
+    V["View (XAML)<br/>Window / UserControl"]
+    VM["ViewModel<br/>CommunityToolkit.Mvvm"]
+    S["Services<br/>VocabularyService / CsvService /<br/>TestSessionService / PromptTemplateService /<br/>IDialogService"]
+    SS["ISettingsService<br/>(JSON)"]
+    DB["VocabDbContext<br/>EF Core"]
+    SQL[("SQLite<br/>%AppData%\VocabApp\vocab.db")]
+    CFG[("settings.json<br/>%AppData%\VocabApp\settings.json")]
+
+    V -->|DataBinding| VM
+    VM -->|DI| S
+    VM -->|DI| SS
+    S -->|IDbContextFactory| DB
+    DB --> SQL
+    SS --> CFG
 ```
-+------------------------------+
-|        View (XAML)           |   WPF Window / UserControl
-+------------------------------+
-              | DataBinding
-+------------------------------+
-|        ViewModel             |   CommunityToolkit.Mvvm
-+------------------------------+
-              | DI
-+------------------------------+
-|        Services              |   VocabularyService, TestSessionService,
-|                              |   CsvService, IVocabularyGenerator
-+------------------------------+
-              |
-+------------------------------+
-|     Repository / DbContext   |   EF Core (SQLite)
-+------------------------------+
-              |
-+------------------------------+
-|       SQLite (file)          |   %AppData%\VocabApp\vocab.db
-+------------------------------+
-```
+
+- `Core` / `Infrastructure` / `Wpf` の 3 層プロジェクト構成。`Core` は WPF / EF Core に依存しない純ドメイン層。
+- ViewModel が UI 副作用 (ダイアログ / ファイル選択 / クリップボード) を直接触らないよう、すべて `IDialogService` 経由にしている。
 
 ### 4.2 採用パターン
 - **MVVM**: 標準。`CommunityToolkit.Mvvm` の `ObservableObject` / `RelayCommand`
@@ -226,49 +224,122 @@ dictionary,辞書; 辞典,noun,Please pass me the English-Japanese dictionary.,t
 
 ### 4.4 主要モデル
 
-```csharp
-public class Word
-{
-    public int Id { get; set; }
-    public string Text { get; set; }          // 英単語
-    public string Meaning { get; set; }       // 和訳 (;区切り複数訳)
-    public PartOfSpeech? PartOfSpeech { get; set; }
-    public string? Example { get; set; }
-    public string? Notes { get; set; }
-    public List<Tag> Tags { get; set; }       // many-to-many
-    public int TimesAsked { get; set; }
-    public int TimesCorrect { get; set; }
-    public DateTime? LastAskedAt { get; set; }
-    public int Mastery { get; set; }          // 0..5
-    public DateTime CreatedAt { get; set; }
-    public DateTime UpdatedAt { get; set; }
-}
+```mermaid
+classDiagram
+    class Word {
+        +int Id
+        +string Text
+        +string Meaning
+        +PartOfSpeech? PartOfSpeech
+        +string? Example
+        +string? Notes
+        +int TimesAsked
+        +int TimesCorrect
+        +DateTime? LastAskedAt
+        +int Mastery
+        +DateTime CreatedAt
+        +DateTime UpdatedAt
+        +List~Tag~ Tags
+    }
+    class Tag {
+        +int Id
+        +string Name
+        +List~Word~ Words
+    }
+    class TestSession {
+        +int Id
+        +DateTime StartedAt
+        +DateTime? EndedAt
+        +TestMode Mode
+        +List~TestAnswer~ Answers
+    }
+    class TestAnswer {
+        +int Id
+        +int TestSessionId
+        +int WordId
+        +string UserInput
+        +bool IsCorrect
+        +DateTime AnsweredAt
+    }
+    class PartOfSpeech {
+        <<enum>>
+        Noun, Verb, Adjective, Adverb,
+        Pronoun, Preposition, Conjunction,
+        Interjection, Phrase, Other
+    }
+    class TestMode {
+        <<enum>>
+        EnglishToJapanese
+        JapaneseToEnglish
+        MultipleChoiceEnglishToJapanese
+        Flashcard
+    }
 
-public class Tag
-{
-    public int Id { get; set; }
-    public string Name { get; set; }
-    public List<Word> Words { get; set; }
-}
-
-public class TestSession
-{
-    public int Id { get; set; }
-    public DateTime StartedAt { get; set; }
-    public DateTime? EndedAt { get; set; }
-    public TestMode Mode { get; set; }
-    public List<TestAnswer> Answers { get; set; }
-}
-
-public class TestAnswer
-{
-    public int Id { get; set; }
-    public int WordId { get; set; }
-    public string UserInput { get; set; }
-    public bool IsCorrect { get; set; }
-    public DateTime AnsweredAt { get; set; }
-}
+    Word "0..*" --> "0..*" Tag : Tags (many-to-many)
+    TestSession "1" --> "0..*" TestAnswer : Answers
+    TestAnswer "0..*" --> "1" Word : Word
+    Word --> PartOfSpeech
+    TestSession --> TestMode
 ```
+
+- `Word.Mastery` は 0〜5 のクランプ整数 (`MasteryRule` で更新)。
+- 多対多 `Word ↔ Tag` は EF Core の skip navigation。実 DB では `WordTags` 結合テーブルがある (§4.5 参照)。
+- `TestAnswer.Word` の FK は **Cascade** で削除 (= 単語を消すと履歴も消える)。詳細は §4.5。
+
+### 4.5 DB スキーマ (SQLite)
+
+```mermaid
+erDiagram
+    Words ||--o{ WordTags : ""
+    Tags  ||--o{ WordTags : ""
+    TestSessions ||--o{ TestAnswers : "Cascade"
+    Words ||--o{ TestAnswers : "Cascade"
+
+    Words {
+        int Id PK
+        string Text
+        string Meaning
+        string PartOfSpeech "nullable"
+        string Example "nullable"
+        string Notes "nullable"
+        int TimesAsked
+        int TimesCorrect
+        int Mastery "0..5"
+        datetime LastAskedAt "nullable"
+        datetime CreatedAt
+        datetime UpdatedAt
+    }
+    Tags {
+        int Id PK
+        string Name "NOCASE collation, UNIQUE"
+    }
+    WordTags {
+        int WordsId FK
+        int TagsId FK
+    }
+    TestSessions {
+        int Id PK
+        datetime StartedAt
+        datetime EndedAt "nullable"
+        string Mode "stored as enum name"
+    }
+    TestAnswers {
+        int Id PK
+        int TestSessionId FK
+        int WordId FK
+        string UserInput
+        bool IsCorrect
+        datetime AnsweredAt
+    }
+```
+
+クラス図に対する **DB 固有の情報** (ここを見ないと分からない点):
+
+- `WordTags` 結合テーブルは C# 側に存在しない (EF Core の skip navigation で自動管理)。
+- `Tag.Name` には SQLite の `NOCASE` collation が付いており、`"TOEIC"` と `"toeic"` を同一視する。`UNIQUE` インデックスも NOCASE で評価されるため大小違いの重複登録は防止される。
+- `TestAnswer.Word` の FK は **`OnDelete: Cascade`** (Word を消すと回答履歴も消える)。
+- `TestAnswer.TestSession` の FK も **`OnDelete: Cascade`**。
+- 現状は `EnsureCreated()` でスキーマを直接作っている。スキーマ変更は既存 DB に反映されないため、設定画面の「DB を初期化」で再生成する運用 (`docs/coding-rules.md` 参照)。
 
 ## 5. UI 構成
 
@@ -287,9 +358,45 @@ public class TestAnswer
 | インポート / エクスポート | ファイル選択 + プレビュー + 衝突解決オプション |
 | 設定 | テーマ, 判定の厳密度, (将来) API キー設定 |
 
-### 5.3 デザイン方針
+### 5.3 画面遷移
+
+MainWindow は左ナビ + `ContentControl` 構成で、`CurrentContent` を切り替えて主要 4 画面を表示する。テスト機能だけは内部に **Setup → Session → Result** の独自遷移を持つ (`TestHostViewModel` が orchestrate)。
+
+**主要画面 (左ナビ)**
+
+```mermaid
+flowchart LR
+    Start([アプリ起動]) --> WL
+    WL[単語一覧<br/>WordListView] <-- 左ナビで切替 --> TH[テスト<br/>TestHostView]
+    WL <-- 左ナビで切替 --> IE[インポート / エクスポート<br/>ImportExportView]
+    WL <-- 左ナビで切替 --> ST[設定<br/>SettingsView]
+    TH <-- 左ナビで切替 --> IE
+    TH <-- 左ナビで切替 --> ST
+    IE <-- 左ナビで切替 --> ST
+
+    WL -. ダイアログ .-> WE[単語編集ダイアログ<br/>WordEditorWindow]
+```
+
+**テスト内の遷移 (TestHostViewModel)**
+
+```mermaid
+flowchart LR
+    Setup[テスト設定<br/>TestSetupView]
+    Run[出題画面<br/>TestSessionView]
+    Result[結果<br/>TestResultView]
+
+    Setup -->|開始| Run
+    Run -->|全問終了| Result
+    Run -->|中断 (1 問以上回答済)| Result
+    Run -->|中断 (未回答)| Setup
+    Result -->|間違いだけ再テスト| Run
+    Result -->|同じ範囲でもう一度| Run
+    Result -->|設定に戻る| Setup
+```
+
+### 5.4 デザイン方針
 - 標準コントロール中心、まず動くものを優先
-- ライト / ダークは `ModernWpf` ないし WPF 標準テーマで切替
+- ライト / ダークは `ModernWpf` ないし WPF 標準テーマで切替 (Phase 4 では未実装)
 
 ## 6. 技術スタック
 

@@ -29,6 +29,41 @@ public class PromptTemplateServiceTests
         prompt.Should().Contain("レベル: TOEIC 700");
     }
 
+    [Fact]
+    public void BuildVocabularyPrompt_ForbidsKatakanaTransliteration()
+    {
+        // dictionary → ディクショナリ のような音訳を禁じるルールが
+        // 説明 + 例の両方で示されていること。
+        var prompt = _service.BuildVocabularyPrompt(
+            new VocabularyPromptRequest("any", 1));
+
+        prompt.Should().Contain("カタカナ");
+        prompt.Should().Contain("音訳");
+        prompt.Should().Contain("ディクショナリ");   // 悪い例として
+        prompt.Should().Contain("辞書");             // 良い例として
+    }
+
+    [Fact]
+    public void BuildVocabularyPrompt_RequiresNotesExplanation()
+    {
+        var prompt = _service.BuildVocabularyPrompt(
+            new VocabularyPromptRequest("any", 1));
+
+        // notes 列に短い日本語解説を必ず入れさせる
+        prompt.Should().Contain("notes");
+        prompt.Should().Contain("解説");
+    }
+
+    [Fact]
+    public void BuildVocabularyPrompt_IncludesGoodExampleRow()
+    {
+        // 形式を真似てもらえるよう、お手本となる行を 1 行入れている
+        var prompt = _service.BuildVocabularyPrompt(
+            new VocabularyPromptRequest("any", 1));
+
+        prompt.Should().Contain("dictionary,辞書");
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]

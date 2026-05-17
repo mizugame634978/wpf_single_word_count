@@ -130,11 +130,11 @@ abandon,放棄する,verb,He abandoned the plan.,"toeic,verb",,12,9,2026-05-10T0
   or 直接貼り付けでインポートする
 - 取り込み時の重複解決・列順自由などのルールは通常の CSV インポートと共通
 
-サンプルプロンプト (テンプレート):
+サンプルプロンプト (実装は `PromptTemplateService.BuildVocabularyPrompt`):
 ```
-あなたは英語教材作成のアシスタントです。
-以下のテーマと条件に従って英単語を生成し、指定された CSV 形式のみを
-出力してください。前後に説明文を入れないでください。
+あなたは英語教材作成のアシスタントです。日本人英語学習者向けに、
+以下のテーマと条件で英単語を生成してください。出力は指定された CSV のみとし、
+前後に説明文・コードフェンス・空行を入れないでください。
 
 テーマ: {theme}
 件数: {count}
@@ -142,9 +142,16 @@ abandon,放棄する,verb,He abandoned the plan.,"toeic,verb",,12,9,2026-05-10T0
 
 CSV 形式 (1 行目はヘッダ固定):
 word,meaning,part_of_speech,example,tags,notes
-- meaning は日本語、複数訳は ; で区切る
-- tags はセル内で ; 区切り
-- example は英文 1 文
+
+列ごとの規則:
+- meaning: 日本語固有の単語による和訳。カタカナ音訳 (dictionary → ディクショナリ
+  等) は不可。複数訳は ; で 2〜3 個。
+- notes: 日本語で 1 文の短い解説を必ず入れる (ニュアンス・使い分け・典型的な文脈)。
+- example: 英文 1 文。
+- tags: セル内 ; 区切り。
+
+良い行の例:
+dictionary,辞書; 辞典,noun,Please pass me the English-Japanese dictionary.,toeic;basic,意味や使い方を調べるための本やアプリ。
 ```
 
 #### 3.6.2 アプリ内 LLM 生成モード (Phase 5)

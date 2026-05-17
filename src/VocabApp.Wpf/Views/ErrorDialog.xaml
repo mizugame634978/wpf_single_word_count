@@ -6,7 +6,8 @@
         MinHeight="220" MinWidth="400"
         WindowStartupLocation="CenterOwner"
         ShowInTaskbar="False"
-        FontFamily="Yu Gothic UI">
+        FontFamily="Yu Gothic UI"
+        Icon="/Resources/app.ico">
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />

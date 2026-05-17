@@ -103,7 +103,17 @@
                 <DataGridTextColumn Header="タグ"
                                     Binding="{Binding Tags, Converter={StaticResource TagsToString}}"
                                     Width="140" />
-                <DataGridTextColumn Header="習熟" Binding="{Binding Mastery}" Width="60" />
+                <DataGridTemplateColumn Header="習熟" Width="60"
+                                        SortMemberPath="Mastery">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Mastery}"
+                                       FontWeight="SemiBold"
+                                       HorizontalAlignment="Center"
+                                       Foreground="{Binding Mastery, Converter={x:Static conv:MasteryToBrushConverter.Instance}}" />
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
                 <DataGridTextColumn Header="出題" Binding="{Binding TimesAsked}" Width="60" />
                 <DataGridTextColumn Header="正答" Binding="{Binding TimesCorrect}" Width="60" />
                 <DataGridTextColumn Header="最終出題"

@@ -10,6 +10,7 @@
         Height="640" Width="980"
         WindowStartupLocation="CenterScreen"
         FontFamily="Yu Gothic UI"
+        Icon="/Resources/app.ico"
         Loaded="OnLoaded">
     <Window.Resources>
         <Style x:Key="NavButton" TargetType="Button">

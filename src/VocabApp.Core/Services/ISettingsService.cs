@@ -7,6 +7,12 @@ public class AppSettings
     public TestMode DefaultTestMode { get; set; } = TestMode.EnglishToJapanese;
     public TestRange DefaultTestRange { get; set; } = TestRange.All;
     public int DefaultTestCount { get; set; } = 10;
+
+    /// <summary>
+    /// Gemini API キーを DPAPI で暗号化して Base64 化したもの。
+    /// 平文を直接入れてはいけない。読み書きは <see cref="ISecretProtector"/> 経由で行う。
+    /// </summary>
+    public string? GeminiApiKeyEncrypted { get; set; }
 }
 
 public interface ISettingsService

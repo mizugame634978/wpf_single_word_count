@@ -78,6 +78,26 @@
     キーフレーズ (悪い例の単語 / 形式キー) の存在を assert し、削れて
     退行することを防ぐ。
 
+### API キー等のシークレットは平文でディスクに書かない
+
+- **ルール (Phase 5)**:
+  - シークレットは `ISecretProtector.Protect()` で DPAPI 暗号化してから設定ファイルに書く。
+  - 復号は使用時 (API 呼び出しの直前) に行い、長時間メモリに保持しない。
+  - 設定ファイル上の暗号文を読める人 = そのユーザ自身に限定される (DPAPI の
+    `DataProtectionScope.CurrentUser`)。
+  - 単体テスト用には `ISecretProtector` を平文返しの実装で差し替える。
+
+### 長寿命サービスから HttpClient を使うときは IHttpClientFactory 経由にする
+
+- **反省 (Phase 5)**: 当初 `services.AddHttpClient<GeminiVocabularyGenerator>()` で
+  HttpClient を直接コンストラクタ注入していたが、Generator を Singleton として
+  扱いたい場面で captive dependency になることが分かった。
+- **ルール**:
+  - Singleton サービスが HTTP を使う場合は `IHttpClientFactory` を注入し、呼び出し
+    ごとに `factory.CreateClient(name)` で取り出す。
+  - 名前付きクライアントのタイムアウト等は DI 登録時に `AddHttpClient(name, ...)` で
+    集約する。
+
 ## データ層
 
 ### SQLite 文字列比較は明示的に NOCASE を指定する

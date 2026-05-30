@@ -4,6 +4,7 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:vm="clr-namespace:VocabApp.Wpf.ViewModels"
+             xmlns:conv="clr-namespace:VocabApp.Wpf.Converters"
              mc:Ignorable="d"
              d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
              d:DesignHeight="500" d:DesignWidth="700"
@@ -51,6 +52,39 @@
 
             <Button Content="設定を保存" HorizontalAlignment="Left" Padding="12,6"
                     Command="{Binding SaveCommand}" />
+
+            <Separator Margin="0,24" />
+
+            <!-- Gemini API キー -->
+            <TextBlock Text="Gemini API キー" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,12">
+                インポート / エクスポート画面の「AI で生成」機能で使う Google Gemini API キー。
+                Google AI Studio で無料で取得できます。キーは Windows の DPAPI で暗号化して
+                <Run Text="settings.json" FontFamily="Consolas" /> に保存され、平文では一切ディスクに書き込まれません。
+            </TextBlock>
+
+            <TextBlock Margin="0,0,0,4">
+                <Run Text="保存状態: " />
+                <Run Text="{Binding StoredKeyStatusText, Mode=OneWay}" FontWeight="SemiBold" />
+            </TextBlock>
+
+            <PasswordBox x:Name="GeminiKeyBox" Margin="0,0,0,8" PasswordChar="●"
+                         PasswordChanged="OnGeminiKeyPasswordChanged" />
+
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Button Content="API キーを保存" Padding="10,6" Margin="0,0,8,0"
+                        Command="{Binding SaveGeminiKeyCommand}" />
+                <Button Content="テスト接続" Padding="10,6" Margin="0,0,8,0"
+                        Command="{Binding TestGeminiConnectionCommand}"
+                        IsEnabled="{Binding IsPinging, Converter={x:Static conv:InverseBoolConverter.Instance}}" />
+                <Button Content="保存済みキーを削除" Padding="10,6" Margin="0,0,8,0"
+                        Command="{Binding ClearGeminiKeyCommand}"
+                        IsEnabled="{Binding HasStoredGeminiKey}" />
+                <Button Content="API キー取得ページを開く" Padding="10,6"
+                        Command="{Binding OpenApiKeyHelpCommand}" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding GeminiStatusMessage}" Foreground="DarkSlateGray" Margin="0,0,0,0" />
 
             <Separator Margin="0,24" />
 

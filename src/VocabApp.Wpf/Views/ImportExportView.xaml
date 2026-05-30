@@ -80,8 +80,50 @@
                          ToolTip="任意。例: 中級 / CEFR B2 / TOEIC 700" />
             </Grid>
 
-            <Button Content="プロンプトを表示" HorizontalAlignment="Left"
-                    Padding="12,6" Command="{Binding ShowPromptCommand}" />
+            <StackPanel Orientation="Horizontal">
+                <Button Content="プロンプトを表示 (手動コピー用)" Padding="12,6" Margin="0,0,8,0"
+                        Command="{Binding ShowPromptCommand}" />
+                <Button Content="AI で生成 (Gemini API)" Padding="12,6"
+                        Command="{Binding GenerateWithLlmCommand}"
+                        IsEnabled="{Binding IsBusy, Converter={x:Static conv:InverseBoolConverter.Instance}}" />
+            </StackPanel>
+
+            <TextBlock Text="{Binding GenerationStatus}" Foreground="DarkSlateGray" Margin="0,12,0,0" TextWrapping="Wrap" />
+
+            <!-- 生成結果プレビュー -->
+            <StackPanel Margin="0,16,0,0"
+                        Visibility="{Binding HasGenerationResult, Converter={x:Static conv:BoolToVisibilityConverter.Instance}}">
+                <TextBlock Text="生成結果のプレビュー" FontWeight="SemiBold" Margin="0,0,0,4" />
+                <TextBlock TextWrapping="Wrap" Foreground="Gray" Margin="0,0,0,8">
+                    取り込みたい行のチェックを入れた状態で『選択した行を取り込む』を押してください。
+                    既存単語と重複する行 (word + 品詞が一致) はチェックを自動で外しています。
+                </TextBlock>
+                <DataGrid ItemsSource="{Binding GeneratedRows}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          GridLinesVisibility="Horizontal"
+                          HeadersVisibility="Column"
+                          RowHeaderWidth="0"
+                          MaxHeight="320">
+                    <DataGrid.Columns>
+                        <DataGridCheckBoxColumn Header="取込" Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="50" />
+                        <DataGridTextColumn Header="単語" Binding="{Binding Word.Text}" Width="120" IsReadOnly="True" />
+                        <DataGridTextColumn Header="和訳" Binding="{Binding Word.Meaning}" Width="180" IsReadOnly="True" />
+                        <DataGridTextColumn Header="品詞" Binding="{Binding Word.PartOfSpeech}" Width="60" IsReadOnly="True" />
+                        <DataGridTextColumn Header="タグ" Binding="{Binding TagsDisplay}" Width="120" IsReadOnly="True" />
+                        <DataGridTextColumn Header="解説 (notes)" Binding="{Binding Word.Notes}" Width="*" IsReadOnly="True" />
+                        <DataGridTextColumn Header="重複" Binding="{Binding IsDuplicate}" Width="50" IsReadOnly="True" />
+                    </DataGrid.Columns>
+                </DataGrid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                    <Button Content="クリア" Padding="10,6" Margin="0,0,8,0"
+                            Command="{Binding ClearGenerationCommand}" />
+                    <Button Content="選択した行を取り込む" Padding="10,6"
+                            Command="{Binding ImportGeneratedCommand}"
+                            IsEnabled="{Binding IsBusy, Converter={x:Static conv:InverseBoolConverter.Instance}}" />
+                </StackPanel>
+            </StackPanel>
 
             <TextBlock Text="{Binding StatusMessage}" Foreground="DarkSlateGray" Margin="0,16,0,0" />
         </StackPanel>

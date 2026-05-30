@@ -23,13 +23,26 @@ public class CsvService : ICsvService
         _logger = logger;
     }
 
+    public Task<ParsedCsv> ParseAsync(Stream input, CancellationToken cancellationToken = default)
+    {
+        var parsed = new ParsedCsv();
+        var rows = ParseRows(input, parsed.Errors);
+        foreach (var row in rows)
+        {
+            // Tag は名前だけ。DB 解決は呼び出し側に任せる (LLM 生成プレビュー用)。
+            row.Word.Tags = row.TagNames.Select(n => new Tag { Name = n }).ToList();
+            parsed.Rows.Add(new ParsedCsvRow(row.LineNumber, row.Word, row.PresentColumns));
+        }
+        return Task.FromResult(parsed);
+    }
+
     public async Task<ImportResult> ImportAsync(
         Stream input,
         ConflictMode conflictMode,
         CancellationToken cancellationToken = default)
     {
         var result = new ImportResult();
-        var parsedRows = ParseRows(input, result);
+        var parsedRows = ParseRows(input, result.Errors);
         if (parsedRows.Count == 0)
         {
             return result;
@@ -230,7 +243,7 @@ public class CsvService : ICsvService
         return result;
     }
 
-    private static List<CsvParsedRow> ParseRows(Stream input, ImportResult result)
+    private static List<CsvParsedRow> ParseRows(Stream input, List<ImportRowError> errors)
     {
         var reader = new StreamReader(input, Encoding.UTF8, detectEncodingFromByteOrderMarks: true);
         var config = new CsvConfiguration(CultureInfo.InvariantCulture)
@@ -244,7 +257,7 @@ public class CsvService : ICsvService
 
         if (!csv.Read())
         {
-            result.Errors.Add(new ImportRowError(0, "CSV が空です。"));
+            errors.Add(new ImportRowError(0, "CSV が空です。"));
             return new List<CsvParsedRow>();
         }
         csv.ReadHeader();
@@ -255,7 +268,7 @@ public class CsvService : ICsvService
         {
             if (!presentColumns.Contains(required))
             {
-                result.Errors.Add(new ImportRowError(1,
+                errors.Add(new ImportRowError(1,
                     $"必須列 '{required}' が見つかりません。"));
                 return new List<CsvParsedRow>();
             }
@@ -271,12 +284,12 @@ public class CsvService : ICsvService
                 var meaning = csv.GetField(CsvSchema.Meaning)?.Trim() ?? string.Empty;
                 if (string.IsNullOrEmpty(text))
                 {
-                    result.Errors.Add(new ImportRowError(lineNumber, "word が空です。"));
+                    errors.Add(new ImportRowError(lineNumber, "word が空です。"));
                     continue;
                 }
                 if (string.IsNullOrEmpty(meaning))
                 {
-                    result.Errors.Add(new ImportRowError(lineNumber, "meaning が空です。"));
+                    errors.Add(new ImportRowError(lineNumber, "meaning が空です。"));
                     continue;
                 }
 
@@ -303,7 +316,7 @@ public class CsvService : ICsvService
             }
             catch (Exception ex)
             {
-                result.Errors.Add(new ImportRowError(lineNumber, ex.Message));
+                errors.Add(new ImportRowError(lineNumber, ex.Message));
             }
         }
         return rows;

@@ -154,31 +154,34 @@ word,meaning,part_of_speech,example,tags,notes
 dictionary,辞書; 辞典,noun,Please pass me the English-Japanese dictionary.,toeic;basic,意味や使い方を調べるための本やアプリ。
 ```
 
-#### 3.6.2 アプリ内 LLM 生成モード (Phase 5) — **保留**
+#### 3.6.2 アプリ内 LLM 生成モード (Phase 5) — **実装済み**
 
-> **現状: 未実装 (Phase 4 完了時点で一旦プロジェクト終了)**。
-> §3.6.1 の外部 LLM 取り込みモードで実用上は代替できているため、
-> 必要性が出てきた段階で再開する想定。
+Google AI Studio で無料枠が広く取れることが分かったので再開し実装。
+モデル `gemini-2.5-flash` 固定、API は REST を直接叩く方式。
 
-将来再開する場合の設計メモ:
+- バックエンド: Gemini REST `models/{model}:generateContent` を `HttpClient` で叩く
+  (SDK は破壊変更が多いため不採用)
+- プロンプトは `PromptTemplateService` を再利用 (カタカナ禁止 + 解説必須ルールが
+  自動的に効く)
+- 応答は CSV テキストとして返る → `CsvService.ParseAsync` でパースして `List<Word>` に
+  変換 (コードフェンス ``` 囲みは自動除去)
+- 抽象化: `IVocabularyGenerator` インタフェース。将来 Claude / 別 API に
+  差し替え可能 (`AddSingleton<IVocabularyGenerator, GeminiVocabularyGenerator>` を
+  差し替えるだけ)
+- API キー保管: Windows DPAPI (`System.Security.Cryptography.ProtectedData`,
+  `DataProtectionScope.CurrentUser`) で暗号化した Base64 文字列を `settings.json`
+  に保存。平文は一切ディスクに書き込まない
+  - 同一ユーザの同一マシンでのみ復号できる
+  - Windows Credential Manager 連携は追加ライブラリが要るため不採用
+- UX:
+  - 設定画面で API キーを保存 / テスト接続 (1 トークンのみ生成) / 削除可能
+  - 「インポート / エクスポート」画面に「AI で生成 (Gemini API)」ボタンを追加
+  - 生成結果は DataGrid のチェックボックスで取捨選択 (既存単語と word+品詞が
+    一致する行はチェックを自動で外して重複防止)
+  - 「選択した行を取り込む」で `IVocabularyService.AddAsync` 経由で追加
 
-- ユースケース
-  - テーマ (例: "ビジネス英語の動詞") と件数を指定して新規単語を一括生成
-  - 既存単語に対して「より自然な和訳の候補」「例文」を後付けで生成
-- 抽象化
-  - `IVocabularyGenerator` インタフェースを定義し、実装は差し替え可能に
-    (インタフェース自体は Phase 0 時点で Core に存在)
-  - 初期実装は Anthropic Claude API (`AnthropicVocabularyGenerator`)
-  - 後続で Gemini API 実装 (`GeminiVocabularyGenerator`) も同インタフェースで
-    追加できるようにしておく
-  - API キーは Windows Credential Manager に保存
-  - プロンプトは `PromptTemplateService` のものをそのまま流用する想定
-- UX
-  - 生成結果はそのまま登録せず、確認画面で取捨選択してから単語帳に追加
-  - 重複は自動でスキップ候補としてマーク
-
-> §3.6.1 の「外部 LLM 取り込みモード」は CSV インポートの上に
-> 載るだけなので Phase 2 完了時点で利用可能。
+> §3.6.1 の「外部 LLM 取り込みモード」もそのまま残存。LLM CLI で対話的に
+> 調整したい場合や API キーを設定したくない場合はこちらが使える。
 
 ## 4. アーキテクチャ
 
@@ -452,10 +455,9 @@ Core / Infrastructure / Wpf の 3 層構成にする。
 | **4. 仕上げ** | フィルタ強化, ショートカット, 設定, 例外ハンドラ | ✅ 完了 (PR #5) |
 | (補遺) アイコン + 配色 | アプリアイコン + 機能的な色フィードバック | ✅ 完了 (PR #6) |
 | (補遺) プロンプト改善 | カタカナ音訳禁止 + 解説必須 | ✅ 完了 (PR #7) |
-| **5. アプリ内 LLM 生成** | `IVocabularyGenerator` (Claude/Gemini 実装) + 生成 → 確認 → 取り込み | ⏸️ 保留 (外部 LLM 取り込みで代替可能なため見送り) |
+| **5. アプリ内 LLM 生成** | `IVocabularyGenerator` (Gemini REST) + DPAPI でキー保管 + 生成 → 取捨選択 → 取り込み | ✅ 完了 |
 
-Phase 0〜4 + 補遺 2 件で日常運用に耐える品質まで到達。Phase 5 は必要性が
-出てきた時点で再開する。
+Phase 0〜5 で当初計画した機能はすべて実装済み。
 
 ## 9. 主要な設計判断と代替案
 

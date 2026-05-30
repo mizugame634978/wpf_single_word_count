@@ -1,8 +1,10 @@
+using System.Collections.ObjectModel;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using VocabApp.Core.Csv;
+using VocabApp.Core.Models;
 using VocabApp.Core.Services;
 using VocabApp.Core.Utilities;
 using VocabApp.Wpf.Services;
@@ -15,6 +17,8 @@ public partial class ImportExportViewModel : ObservableObject
 
     private readonly ICsvService _csvService;
     private readonly IPromptTemplateService _promptService;
+    private readonly IVocabularyGenerator _generator;
+    private readonly IVocabularyService _vocabService;
     private readonly IDialogService _dialogService;
     private readonly WordListViewModel _wordListViewModel;
     private readonly ILogger<ImportExportViewModel> _logger;
@@ -22,12 +26,16 @@ public partial class ImportExportViewModel : ObservableObject
     public ImportExportViewModel(
         ICsvService csvService,
         IPromptTemplateService promptService,
+        IVocabularyGenerator generator,
+        IVocabularyService vocabService,
         IDialogService dialogService,
         WordListViewModel wordListViewModel,
         ILogger<ImportExportViewModel> logger)
     {
         _csvService = csvService;
         _promptService = promptService;
+        _generator = generator;
+        _vocabService = vocabService;
         _dialogService = dialogService;
         _wordListViewModel = wordListViewModel;
         _logger = logger;
@@ -63,6 +71,14 @@ public partial class ImportExportViewModel : ObservableObject
 
     [ObservableProperty]
     private bool isBusy;
+
+    /// <summary>AI で生成した結果のプレビュー (チェックを付けて取り込む)。</summary>
+    public ObservableCollection<GeneratedWordRow> GeneratedRows { get; } = new();
+
+    [ObservableProperty]
+    private string generationStatus = string.Empty;
+
+    public bool HasGenerationResult => GeneratedRows.Count > 0;
 
     [RelayCommand]
     private async Task ImportAsync()
@@ -155,16 +171,7 @@ public partial class ImportExportViewModel : ObservableObject
     [RelayCommand]
     private async Task ShowPromptAsync()
     {
-        if (string.IsNullOrWhiteSpace(PromptTheme))
-        {
-            await _dialogService.ShowErrorAsync("テーマを入力してください。", "入力エラー");
-            return;
-        }
-        if (PromptCount <= 0)
-        {
-            await _dialogService.ShowErrorAsync("件数は 1 以上を指定してください。", "入力エラー");
-            return;
-        }
+        if (!ValidatePromptInputs()) return;
 
         string prompt;
         try
@@ -189,5 +196,143 @@ public partial class ImportExportViewModel : ObservableObject
             "本文は選択済みです。Ctrl+C でコピー後、Gemini CLI / ChatGPT などに貼り付け、得られた CSV を上の「インポート」から取り込んでください。");
     }
 
+    [RelayCommand]
+    private async Task GenerateWithLlmAsync()
+    {
+        if (!ValidatePromptInputs()) return;
+
+        IsBusy = true;
+        GenerationStatus = $"Gemini で生成中 (テーマ: {PromptTheme}, 件数: {PromptCount})…";
+        try
+        {
+            var result = await _generator.GenerateAsync(new VocabularyGenerationRequest(
+                Theme: PromptTheme,
+                Count: PromptCount,
+                Level: string.IsNullOrWhiteSpace(PromptLevel) ? null : PromptLevel));
+
+            // 既存単語と重複している行は自動でチェックオフ。
+            var existing = await _vocabService.GetAllAsync();
+            var existingKeys = existing
+                .Select(w => (w.Text.Trim().ToLowerInvariant(), w.PartOfSpeech))
+                .ToHashSet();
+
+            GeneratedRows.Clear();
+            foreach (var w in result)
+            {
+                var isDup = existingKeys.Contains((w.Text.Trim().ToLowerInvariant(), w.PartOfSpeech));
+                GeneratedRows.Add(new GeneratedWordRow(w, isSelected: !isDup, isDuplicate: isDup));
+            }
+            OnPropertyChanged(nameof(HasGenerationResult));
+
+            var dupCount = GeneratedRows.Count(r => r.IsDuplicate);
+            GenerationStatus = $"{GeneratedRows.Count} 件生成しました (うち重複 {dupCount} 件はチェックを外しています)。確認の上『選択した N 件を取り込む』を押してください。";
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "LLM generation failed");
+            GenerationStatus = "生成に失敗しました。";
+            await _dialogService.ShowErrorAsync(
+                $"AI 生成に失敗しました。\n\n{ExceptionFormatter.Format(ex)}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task ImportGeneratedAsync()
+    {
+        var selected = GeneratedRows.Where(r => r.IsSelected).Select(r => r.Word).ToList();
+        if (selected.Count == 0)
+        {
+            await _dialogService.ShowErrorAsync(
+                "取り込む単語が選択されていません。", "選択なし");
+            return;
+        }
+
+        IsBusy = true;
+        GenerationStatus = $"取り込み中 ({selected.Count} 件)…";
+        var added = 0;
+        var errors = 0;
+        try
+        {
+            foreach (var word in selected)
+            {
+                try
+                {
+                    await _vocabService.AddAsync(word);
+                    added++;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to add generated word: {Text}", word.Text);
+                    errors++;
+                }
+            }
+
+            GenerationStatus = $"取り込み完了: {added} 件追加 / {errors} 件エラー";
+            await _wordListViewModel.LoadCommand.ExecuteAsync(null);
+            GeneratedRows.Clear();
+            OnPropertyChanged(nameof(HasGenerationResult));
+            await _dialogService.ShowInfoAsync(GenerationStatus, "取り込み完了");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to import generated words");
+            GenerationStatus = "取り込みに失敗しました。";
+            await _dialogService.ShowErrorAsync(
+                $"取り込み中にエラーが発生しました。\n\n{ExceptionFormatter.Format(ex)}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ClearGeneration()
+    {
+        GeneratedRows.Clear();
+        GenerationStatus = string.Empty;
+        OnPropertyChanged(nameof(HasGenerationResult));
+    }
+
+    private bool ValidatePromptInputs()
+    {
+        if (string.IsNullOrWhiteSpace(PromptTheme))
+        {
+            _ = _dialogService.ShowErrorAsync("テーマを入力してください。", "入力エラー");
+            return false;
+        }
+        if (PromptCount <= 0)
+        {
+            _ = _dialogService.ShowErrorAsync("件数は 1 以上を指定してください。", "入力エラー");
+            return false;
+        }
+        return true;
+    }
+
     public record ConflictModeChoice(ConflictMode Value, string Display);
+}
+
+/// <summary>AI 生成結果プレビュー 1 行ぶん。</summary>
+public partial class GeneratedWordRow : ObservableObject
+{
+    public GeneratedWordRow(Word word, bool isSelected, bool isDuplicate)
+    {
+        Word = word;
+        this.isSelected = isSelected;
+        IsDuplicate = isDuplicate;
+    }
+
+    public Word Word { get; }
+
+    public bool IsDuplicate { get; }
+
+    public string TagsDisplay =>
+        string.Join("; ", Word.Tags.Select(t => t.Name).OrderBy(n => n, StringComparer.OrdinalIgnoreCase));
+
+    [ObservableProperty]
+    private bool isSelected;
 }
